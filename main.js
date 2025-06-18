@@ -79,8 +79,7 @@ if (typeof io !== 'undefined') {
 
   // Receive other players' states
   socket.on('players', (players) => {
-    otherPlayers = players;
-    // Remove self from otherPlayers
+    otherPlayers = { ...players };
     if (socket.id && otherPlayers[socket.id]) {
       delete otherPlayers[socket.id];
     }

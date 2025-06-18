@@ -15,7 +15,7 @@ let players = {};
 
 io.on('connection', (socket) => {
   console.log('Player connected:', socket.id);
-  players[socket.id] = { x: 0, y: 0, angle: 0, vx: 0, vy: 0, radius: 20 };
+  players[socket.id] = { x: 1000, y: 1000, angle: 0, vx: 0, vy: 0, radius: 20 };
 
   // Send all players to everyone
   io.emit('players', players);
