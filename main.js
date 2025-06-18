@@ -70,6 +70,23 @@ function createEntity() {
 
 const entities = Array.from({ length: NUM_ENTITIES }, createEntity);
 
+// --- Multiplayer Setup ---
+let socket;
+let otherPlayers = {};
+
+if (typeof io !== 'undefined') {
+  socket = io();
+
+  // Receive other players' states
+  socket.on('players', (players) => {
+    otherPlayers = players;
+    // Remove self from otherPlayers
+    if (socket.id && otherPlayers[socket.id]) {
+      delete otherPlayers[socket.id];
+    }
+  });
+}
+
 function update() {
   // Rotate player
   if (keys['ArrowLeft'] || keys['a']) player.angle -= player.rotationSpeed;
@@ -150,6 +167,18 @@ function update() {
     entity.x = Math.max(entity.radius, Math.min(WORLD_WIDTH - entity.radius, entity.x));
     entity.y = Math.max(entity.radius, Math.min(WORLD_HEIGHT - entity.radius, entity.y));
   }
+
+  // Send player state to server
+  if (socket && socket.connected) {
+    socket.emit('move', {
+      x: player.x,
+      y: player.y,
+      angle: player.angle,
+      vx: player.vx,
+      vy: player.vy,
+      radius: player.radius
+    });
+  }
 }
 
 function draw() {
@@ -207,6 +236,27 @@ function draw() {
     player.y + Math.sin(player.angle) * player.radius
   );
   ctx.stroke();
+
+  // Draw other players
+  ctx.save();
+  ctx.translate(-camera.x, -camera.y);
+  ctx.fillStyle = '#09f';
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 2;
+  for (const id in otherPlayers) {
+    const p = otherPlayers[id];
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.radius || 20, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y);
+    ctx.lineTo(
+      p.x + Math.cos(p.angle) * (p.radius || 20),
+      p.y + Math.sin(p.angle) * (p.radius || 20)
+    );
+    ctx.stroke();
+  }
+  ctx.restore();
 
   ctx.restore();
 }
