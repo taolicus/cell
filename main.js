@@ -155,7 +155,188 @@ function updateJoystick(x, y) {
   joystickValue = { x: dx / maxDist, y: dy / maxDist };
 }
 
+// --- PLANETS ---
+const planets = [
+  { name: 'Terra', x: 400, y: 600, radius: 60, color: '#4af' },
+  { name: 'Vega', x: 1600, y: 400, radius: 50, color: '#fa4' },
+  { name: 'Zyra', x: 1200, y: 1600, radius: 70, color: '#a4f' }
+];
+let selectedPlanet = null;
+let isTraveling = false;
+let travelStartTime = 0;
+let travelDuration = 0;
+let travelFrom = null;
+const AUTOPILOT_STRENGTH = 0.04; // how strongly autopilot nudges toward planet
+const ARRIVAL_RADIUS = 40; // how close to planet center counts as arrived
+const stopTravelBtn = document.getElementById('stopTravelBtn');
+let travelTurnStart = 0;
+let travelTurnDuration = 1000; // ms
+let travelInitialAngle = 0;
+let travelTargetAngle = 0;
+let travelTurning = false;
+
+// --- PLANET DRAWING & DISTANCE ---
+function drawPlanets(ctx) {
+  for (const planet of planets) {
+    // Draw planet
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(planet.x, planet.y, planet.radius, 0, Math.PI * 2);
+    ctx.fillStyle = planet.color;
+    ctx.globalAlpha = 0.85;
+    ctx.fill();
+    ctx.globalAlpha = 1.0;
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = '#fff';
+    ctx.stroke();
+    // Draw name
+    ctx.font = 'bold 28px monospace';
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText(planet.name, planet.x, planet.y + planet.radius + 8);
+    ctx.restore();
+  }
+}
+
+function drawPlanetDistances(ctx) {
+  for (const planet of planets) {
+    // Draw line from player to planet
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(player.x, player.y);
+    ctx.lineTo(planet.x, planet.y);
+    ctx.strokeStyle = '#fff6';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([8, 8]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    // Draw distance label
+    const dx = planet.x - player.x;
+    const dy = planet.y - player.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const midX = player.x + dx * 0.5;
+    const midY = player.y + dy * 0.5;
+    ctx.font = '20px monospace';
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText(`${dist.toFixed(0)} units`, midX, midY - 8);
+    ctx.restore();
+  }
+}
+
+// --- PLANET CLICK HANDLER ---
+canvas.addEventListener('click', function(e) {
+  // Convert click to world coordinates
+  const rect = canvas.getBoundingClientRect();
+  const clickX = e.clientX - rect.left + camera.x;
+  const clickY = e.clientY - rect.top + camera.y;
+  for (const planet of planets) {
+    const dx = clickX - planet.x;
+    const dy = clickY - planet.y;
+    if (Math.sqrt(dx * dx + dy * dy) < planet.radius + 10) {
+      selectedPlanet = planet;
+      // Start travel
+      if (!isTraveling) {
+        isTraveling = true;
+        travelStartTime = Date.now();
+        travelFrom = { x: player.x, y: player.y };
+        // Travel time: 1 unit = 1 second (adjust as needed), measure from border
+        const distToCenter = Math.sqrt((planet.x - player.x) ** 2 + (planet.y - player.y) ** 2);
+        const distToBorder = Math.max(0, distToCenter - planet.radius);
+        travelDuration = Math.max(10 * 1000, distToBorder * 1000); // min 10s, else 1 unit = 1s
+        stopTravelBtn.style.display = 'block';
+        // Start smooth turn
+        travelTurnStart = Date.now();
+        travelTurning = true;
+        travelInitialAngle = player.angle;
+        travelTargetAngle = Math.atan2(planet.y - player.y, planet.x - player.x);
+      }
+      break;
+    }
+  }
+});
+
+// --- STOP TRAVEL BUTTON HANDLER ---
+stopTravelBtn.addEventListener('click', function() {
+  isTraveling = false;
+  selectedPlanet = null;
+  stopTravelBtn.style.display = 'none';
+  travelTurning = false;
+});
+
+function isManualInputActive() {
+  // Keyboard
+  if (keys['ArrowLeft'] || keys['a'] || keys['ArrowRight'] || keys['d'] || keys['ArrowUp'] || keys['w'] || keys['ArrowDown'] || keys['s']) return true;
+  // Joystick
+  if (joystickActive || Math.abs(joystickValue.x) > 0.1 || Math.abs(joystickValue.y) > 0.1) return true;
+  return false;
+}
+
 function update() {
+  if (isTraveling && selectedPlanet) {
+    // Smoothly turn toward destination at start of travel
+    if (travelTurning) {
+      const now = Date.now();
+      const t = Math.min(1, (now - travelTurnStart) / travelTurnDuration);
+      // Interpolate angle shortest way
+      let delta = travelTargetAngle - travelInitialAngle;
+      // Wrap to [-PI, PI]
+      delta = ((delta + Math.PI) % (2 * Math.PI)) - Math.PI;
+      player.angle = travelInitialAngle + delta * t;
+      // Wrap to [-PI, PI]
+      player.angle = ((player.angle + Math.PI) % (2 * Math.PI)) - Math.PI;
+      if (t >= 1) {
+        travelTurning = false;
+      }
+    } else if (!isManualInputActive()) {
+      // --- AUTOPILOT: use normal movement mechanics, but slow down near planet ---
+      const dx = selectedPlanet.x - player.x;
+      const dy = selectedPlanet.y - player.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const angleToPlanet = Math.atan2(dy, dx);
+      // Slow down as we approach
+      const slowRadius = Math.max(ARRIVAL_RADIUS + selectedPlanet.radius, selectedPlanet.radius * 2);
+      let slowFactor = Math.min(1, dist / slowRadius); // 1 far, 0 at center
+      // Interpolate maxSpeed and acceleration
+      const autoMaxSpeed = 1.5 + (player.maxSpeed - 1.5) * slowFactor;
+      const autoAccel = 0.05 + (player.acceleration - 0.05) * slowFactor;
+      // Rotate toward target at normal speed
+      let delta = angleToPlanet - player.angle;
+      delta = ((delta + Math.PI) % (2 * Math.PI)) - Math.PI;
+      if (Math.abs(delta) > player.rotationSpeed) {
+        player.angle += Math.sign(delta) * player.rotationSpeed;
+        // Wrap
+        player.angle = ((player.angle + Math.PI) % (2 * Math.PI)) - Math.PI;
+      } else {
+        player.angle = angleToPlanet;
+      }
+      // Accelerate forward as if holding up, but scaled
+      player.vx += Math.cos(player.angle) * autoAccel;
+      player.vy += Math.sin(player.angle) * autoAccel;
+      // Clamp speed
+      const velocity = Math.sqrt(player.vx * player.vx + player.vy * player.vy);
+      if (velocity > autoMaxSpeed) {
+        player.vx = (player.vx / velocity) * autoMaxSpeed;
+        player.vy = (player.vy / velocity) * autoMaxSpeed;
+      }
+      // Friction is applied below as usual
+    }
+    // Arrival check (always)
+    const dx = selectedPlanet.x - player.x;
+    const dy = selectedPlanet.y - player.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    // If within planet radius, stop at center
+    if (dist < selectedPlanet.radius) {
+      player.vx = 0;
+      player.vy = 0;
+      isTraveling = false;
+      selectedPlanet = null;
+      stopTravelBtn.style.display = 'none';
+      travelTurning = false;
+    }
+  }
   // --- Joystick input (overrides keyboard if active) ---
   if (joystickActive || Math.abs(joystickValue.x) > 0.1 || Math.abs(joystickValue.y) > 0.1) {
     // Calculate magnitude and direction
@@ -246,6 +427,40 @@ function drawEntity(ctx, entity, fillStyle = '#fff', strokeStyle = '#fff') {
   ctx.restore();
 }
 
+// --- TRAVEL PROGRESS OVERLAY ---
+function drawTravelOverlay(ctx) {
+  if (isTraveling && selectedPlanet) {
+    // Estimate time left based on distance and average speed
+    const dx = selectedPlanet.x - player.x;
+    const dy = selectedPlanet.y - player.y;
+    const distToCenter = Math.sqrt(dx * dx + dy * dy);
+    const distToBorder = Math.max(0, distToCenter - selectedPlanet.radius);
+    // Estimate: time left = distToBorder / (player.maxSpeed/2) (rough guess)
+    const estSeconds = Math.ceil(distToBorder / (player.maxSpeed / 2));
+    // Draw overlay bar (show as percent of original border distance)
+    const origDistToCenter = Math.sqrt((selectedPlanet.x - travelFrom.x) ** 2 + (selectedPlanet.y - travelFrom.y) ** 2);
+    const origDistToBorder = Math.max(0, origDistToCenter - selectedPlanet.radius);
+    const t = 1 - Math.min(1, distToBorder / (origDistToBorder || 1));
+    ctx.save();
+    ctx.globalAlpha = 0.85;
+    ctx.fillStyle = '#222';
+    ctx.fillRect(canvas.width / 2 - 180, canvas.height - 60, 360, 40);
+    ctx.globalAlpha = 1.0;
+    ctx.strokeStyle = '#fff';
+    ctx.strokeRect(canvas.width / 2 - 180, canvas.height - 60, 360, 40);
+    // Progress bar
+    ctx.fillStyle = '#4af';
+    ctx.fillRect(canvas.width / 2 - 178, canvas.height - 58, 356 * t, 36);
+    // Text
+    ctx.font = '22px monospace';
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`Traveling to ${selectedPlanet.name}... ~${estSeconds}s left`, canvas.width / 2, canvas.height - 40);
+    ctx.restore();
+  }
+}
+
 function draw() {
   const { width: VIEWPORT_WIDTH, height: VIEWPORT_HEIGHT } = getViewportSize();
   ctx.clearRect(0, 0, VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
@@ -282,6 +497,10 @@ function draw() {
   // Draw player
   drawEntity(ctx, player, '#0f0', '#fff');
 
+  // Draw planets and distances
+  drawPlanets(ctx);
+  drawPlanetDistances(ctx);
+
   ctx.restore();
 
   // Draw player coordinates in the top-left corner (overlay)
@@ -313,6 +532,8 @@ function draw() {
     ctx.restore();
   }
   ctx.restore();
+
+  drawTravelOverlay(ctx);
 }
 
 function gameLoop() {
