@@ -3,8 +3,8 @@ const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
 // World and viewport sizes
-const WORLD_WIDTH = 6000;
-const WORLD_HEIGHT = 6000;
+let WORLD_WIDTH = 6000;
+let WORLD_HEIGHT = 6000;
 
 // Set canvas size to fill window
 function resizeCanvas() {
@@ -87,6 +87,11 @@ if (typeof io !== 'undefined') {
   // Listen for entities from the server
   socket.on('entities', (serverEntities) => {
     entities = serverEntities;
+  });
+
+  socket.on('worldSize', (size) => {
+    WORLD_WIDTH = size.width;
+    WORLD_HEIGHT = size.height;
   });
 }
 
@@ -269,11 +274,14 @@ function drawPlanetDistances(ctx) {
 }
 
 // --- PLANET CLICK HANDLER ---
+let playerFollowEntityIndex = null; // index in entities[]
+
 canvas.addEventListener('click', function(e) {
   // Convert click to world coordinates
   const rect = canvas.getBoundingClientRect();
   const clickX = e.clientX - rect.left + camera.x;
   const clickY = e.clientY - rect.top + camera.y;
+  // Check planets first
   for (const planet of planets) {
     const dx = clickX - planet.x;
     const dy = clickY - planet.y;
@@ -295,8 +303,33 @@ canvas.addEventListener('click', function(e) {
         travelInitialAngle = player.angle;
         travelTargetAngle = Math.atan2(planet.y - player.y, planet.x - player.x);
       }
+      playerFollowEntityIndex = null; // stop following entity if planet clicked
+      return;
+    }
+  }
+  // Check entities
+  let foundEntity = false;
+  for (let i = 0; i < entities.length; i++) {
+    const entity = entities[i];
+    const dx = clickX - entity.x;
+    const dy = clickY - entity.y;
+    if (Math.sqrt(dx * dx + dy * dy) < entity.radius + 10) {
+      playerFollowEntityIndex = i;
+      foundEntity = true;
+      selectedPlanet = null;
+      isTraveling = false;
+      stopTravelBtn.style.display = 'none';
       break;
     }
+  }
+  if (!foundEntity) {
+    playerFollowEntityIndex = null; // click on empty space stops following
+  }
+});
+
+window.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    playerFollowEntityIndex = null;
   }
 });
 
@@ -318,7 +351,45 @@ function isManualInputActive() {
 }
 
 function update() {
-  if (isTraveling && selectedPlanet) {
+  if (playerFollowEntityIndex !== null && entities[playerFollowEntityIndex]) {
+    const target = entities[playerFollowEntityIndex];
+    const dx = target.x - player.x;
+    const dy = target.y - player.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const angleToEntity = Math.atan2(dy, dx);
+    // Slow down as we approach
+    const slowRadius = Math.max(40 + target.radius, target.radius * 2);
+    let slowFactor = Math.min(1, dist / slowRadius); // 1 far, 0 at center
+    // Interpolate maxSpeed and acceleration
+    const autoMaxSpeed = 1.5 + (player.maxSpeed - 1.5) * slowFactor;
+    const autoAccel = 0.05 + (player.acceleration - 0.05) * slowFactor;
+    // Rotate toward target at normal speed
+    let delta = angleToEntity - player.angle;
+    delta = ((delta + Math.PI) % (2 * Math.PI)) - Math.PI;
+    if (Math.abs(delta) > player.rotationSpeed) {
+      player.angle += Math.sign(delta) * player.rotationSpeed;
+      // Wrap
+      player.angle = ((player.angle + Math.PI) % (2 * Math.PI)) - Math.PI;
+    } else {
+      player.angle = angleToEntity;
+    }
+    // Accelerate forward as if holding up, but scaled
+    player.vx += Math.cos(player.angle) * autoAccel;
+    player.vy += Math.sin(player.angle) * autoAccel;
+    // Clamp speed
+    const velocity = Math.sqrt(player.vx * player.vx + player.vy * player.vy);
+    if (velocity > autoMaxSpeed) {
+      player.vx = (player.vx / velocity) * autoMaxSpeed;
+      player.vy = (player.vy / velocity) * autoMaxSpeed;
+    }
+    // If within entity radius, stop at center
+    if (dist < target.radius + player.radius) {
+      player.vx = 0;
+      player.vy = 0;
+      // Optionally: playerFollowEntityIndex = null; // stop following when reached
+    }
+    // Friction is applied below as usual
+  } else if (isTraveling && selectedPlanet) {
     // Smoothly turn toward destination at start of travel
     if (travelTurning) {
       const now = Date.now();
