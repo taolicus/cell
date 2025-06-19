@@ -93,30 +93,106 @@ if (typeof io !== 'undefined') {
 // Throttle sending player state to server
 let lastMoveSent = 0;
 const MOVE_SEND_INTERVAL = 50; // ms, 20Hz
+
+// --- Joystick for Mobile Devices ---
+const joystick = document.getElementById('joystick');
+const joystickKnob = document.getElementById('joystick-knob');
+let joystickActive = false;
+let joystickCenter = { x: 0, y: 0 };
+let joystickValue = { x: 0, y: 0 };
+
+function isTouchDevice() {
+  return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+}
+
+function showJoystickIfMobile() {
+  if (isTouchDevice()) {
+    joystick.style.display = 'block';
+  }
+}
+showJoystickIfMobile();
+
+joystick.addEventListener('touchstart', function(e) {
+  e.preventDefault();
+  joystickActive = true;
+  const rect = joystick.getBoundingClientRect();
+  const touch = e.touches[0];
+  joystickCenter = {
+    x: rect.left + rect.width / 2,
+    y: rect.top + rect.height / 2
+  };
+  updateJoystick(touch.clientX, touch.clientY);
+}, { passive: false });
+
+joystick.addEventListener('touchmove', function(e) {
+  e.preventDefault();
+  if (!joystickActive) return;
+  const touch = e.touches[0];
+  updateJoystick(touch.clientX, touch.clientY);
+}, { passive: false });
+
+joystick.addEventListener('touchend', function(e) {
+  e.preventDefault();
+  joystickActive = false;
+  joystickValue = { x: 0, y: 0 };
+  joystickKnob.style.left = '40px';
+  joystickKnob.style.top = '40px';
+}, { passive: false });
+
+function updateJoystick(x, y) {
+  // Calculate relative to center
+  let dx = x - joystickCenter.x;
+  let dy = y - joystickCenter.y;
+  // Clamp to radius 50px
+  const maxDist = 50;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  if (dist > maxDist) {
+    dx = (dx / dist) * maxDist;
+    dy = (dy / dist) * maxDist;
+  }
+  joystickKnob.style.left = (40 + dx) + 'px';
+  joystickKnob.style.top = (40 + dy) + 'px';
+  joystickValue = { x: dx / maxDist, y: dy / maxDist };
+}
+
 function update() {
-  // Rotate player
-  if (keys['ArrowLeft'] || keys['a']) player.angle -= player.rotationSpeed;
-  if (keys['ArrowRight'] || keys['d']) player.angle += player.rotationSpeed;
-
-  // Thrust forward/backward
-  if (keys['ArrowUp'] || keys['w']) {
-    player.vx += Math.cos(player.angle) * player.acceleration;
-    player.vy += Math.sin(player.angle) * player.acceleration;
-  }
-  if (keys['ArrowDown'] || keys['s']) {
-    player.vx *= 0.96; // stronger drag when braking
-    player.vy *= 0.96;
-  }
-
-  // Apply friction (liquid drag)
-  player.vx *= player.friction;
-  player.vy *= player.friction;
-
-  // Clamp speed
-  const velocity = Math.sqrt(player.vx * player.vx + player.vy * player.vy);
-  if (velocity > player.maxSpeed) {
-    player.vx = (player.vx / velocity) * player.maxSpeed;
-    player.vy = (player.vy / velocity) * player.maxSpeed;
+  // --- Joystick input (overrides keyboard if active) ---
+  if (joystickActive || Math.abs(joystickValue.x) > 0.1 || Math.abs(joystickValue.y) > 0.1) {
+    // Calculate magnitude and direction
+    const mag = Math.sqrt(joystickValue.x * joystickValue.x + joystickValue.y * joystickValue.y);
+    if (mag > 0.1) {
+      // Joystick direction: atan2(-y, x) because y is inverted (screen coords)
+      const joyAngle = Math.atan2(joystickValue.y, joystickValue.x);
+      player.angle = joyAngle;
+      // Set velocity directly, scale by maxSpeed and magnitude
+      player.vx = Math.cos(joyAngle) * player.maxSpeed * mag;
+      player.vy = Math.sin(joyAngle) * player.maxSpeed * mag;
+    } else {
+      // If joystick is near center, slow down
+      player.vx *= player.friction;
+      player.vy *= player.friction;
+    }
+  } else {
+    // Keyboard input (original logic)
+    if (keys['ArrowLeft'] || keys['a']) player.angle -= player.rotationSpeed;
+    if (keys['ArrowRight'] || keys['d']) player.angle += player.rotationSpeed;
+    if (keys['ArrowUp'] || keys['w']) {
+      player.vx += Math.cos(player.angle) * player.acceleration;
+      player.vy += Math.sin(player.angle) * player.acceleration;
+    }
+    if (keys['ArrowDown'] || keys['s']) {
+      player.vx *= 0.96;
+      player.vy *= 0.96;
+    }
+    // Apply friction (liquid drag)
+    player.vx *= player.friction;
+    player.vy *= player.friction;
+    // Clamp speed
+    const velocity = Math.sqrt(player.vx * player.vx + player.vy * player.vy);
+    if (velocity > player.maxSpeed) {
+      player.vx = (player.vx / velocity) * player.maxSpeed;
+      player.vy = (player.vy / velocity) * player.maxSpeed;
+    }
   }
 
   // Update position

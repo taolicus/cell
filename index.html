@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=800, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Canvas Game POC</title>
   <style>
     body { margin: 0; overflow: hidden; }
@@ -11,6 +11,10 @@
 </head>
 <body>
   <canvas id="gameCanvas"></canvas>
+  <div id="joystick" style="position:fixed;left:50%;bottom:24px;transform:translateX(-50%);width:120px;height:120px;z-index:10;touch-action:none;display:none;">
+    <div id="joystick-base" style="position:absolute;left:0;top:0;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,0.08);"></div>
+    <div id="joystick-knob" style="position:absolute;left:40px;top:40px;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.35);"></div>
+  </div>
   <script src="/socket.io/socket.io.js"></script>
   <script src="main.js"></script>
 </body>
