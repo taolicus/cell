@@ -3,8 +3,8 @@ const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
 // World and viewport sizes
-const WORLD_WIDTH = 2000;
-const WORLD_HEIGHT = 2000;
+const WORLD_WIDTH = 6000;
+const WORLD_HEIGHT = 6000;
 
 // Set canvas size to fill window
 function resizeCanvas() {
@@ -157,9 +157,9 @@ function updateJoystick(x, y) {
 
 // --- PLANETS ---
 const planets = [
-  { name: 'Terra', x: 400, y: 600, radius: 60, color: '#4af' },
-  { name: 'Vega', x: 1600, y: 400, radius: 50, color: '#fa4' },
-  { name: 'Zyra', x: 1200, y: 1600, radius: 70, color: '#a4f' }
+  { name: 'Terra', x: 1000, y: 1200, radius: 60, color: '#4af' },
+  { name: 'Vega', x: 5000, y: 800, radius: 50, color: '#fa4' },
+  { name: 'Zyra', x: 3200, y: 5000, radius: 70, color: '#a4f' }
 ];
 let selectedPlanet = null;
 let isTraveling = false;
@@ -174,6 +174,48 @@ let travelTurnDuration = 1000; // ms
 let travelInitialAngle = 0;
 let travelTargetAngle = 0;
 let travelTurning = false;
+
+// --- PLANET TRAVEL BUTTONS ---
+const planetTravelBtns = document.getElementById('planetTravelBtns');
+function updatePlanetTravelButtons() {
+  // Clear existing
+  planetTravelBtns.innerHTML = '';
+  if (!isTraveling) {
+    planets.forEach((planet, idx) => {
+      const btn = document.createElement('button');
+      btn.textContent = `Travel to ${planet.name}`;
+      btn.style.padding = '12px 20px';
+      btn.style.fontSize = '20px';
+      btn.style.background = planet.color;
+      btn.style.color = '#fff';
+      btn.style.border = 'none';
+      btn.style.borderRadius = '8px';
+      btn.style.boxShadow = '0 2px 8px #0008';
+      btn.style.cursor = 'pointer';
+      btn.id = `travelBtn_${planet.name}`;
+      btn.onclick = () => {
+        selectedPlanet = planet;
+        if (!isTraveling) {
+          isTraveling = true;
+          travelStartTime = Date.now();
+          travelFrom = { x: player.x, y: player.y };
+          const distToCenter = Math.sqrt((planet.x - player.x) ** 2 + (planet.y - player.y) ** 2);
+          const distToBorder = Math.max(0, distToCenter - planet.radius);
+          travelDuration = Math.max(10 * 1000, distToBorder * 1000);
+          stopTravelBtn.style.display = 'block';
+          travelTurnStart = Date.now();
+          travelTurning = true;
+          travelInitialAngle = player.angle;
+          travelTargetAngle = Math.atan2(planet.y - player.y, planet.x - player.x);
+        }
+      };
+      planetTravelBtns.appendChild(btn);
+    });
+    planetTravelBtns.style.display = 'flex';
+  } else {
+    planetTravelBtns.style.display = 'none';
+  }
+}
 
 // --- PLANET DRAWING & DISTANCE ---
 function drawPlanets(ctx) {
@@ -264,6 +306,7 @@ stopTravelBtn.addEventListener('click', function() {
   selectedPlanet = null;
   stopTravelBtn.style.display = 'none';
   travelTurning = false;
+  updatePlanetTravelButtons();
 });
 
 function isManualInputActive() {
@@ -335,6 +378,7 @@ function update() {
       selectedPlanet = null;
       stopTravelBtn.style.display = 'none';
       travelTurning = false;
+      updatePlanetTravelButtons();
     }
   }
   // --- Joystick input (overrides keyboard if active) ---
@@ -543,3 +587,6 @@ function gameLoop() {
 }
 
 gameLoop();
+
+// Call updatePlanetTravelButtons on load
+updatePlanetTravelButtons();
