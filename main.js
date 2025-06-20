@@ -173,6 +173,8 @@ let travelDuration = 0;
 let travelFrom = null;
 const AUTOPILOT_STRENGTH = 0.04; // how strongly autopilot nudges toward planet
 const ARRIVAL_RADIUS = 40; // how close to planet center counts as arrived
+// Extra buffer when following a moving entity to avoid touching it
+const ENTITY_FOLLOW_PADDING = 20;
 const stopTravelBtn = document.getElementById('stopTravelBtn');
 let travelTurnStart = 0;
 let travelTurnDuration = 1000; // ms
@@ -353,40 +355,43 @@ function isManualInputActive() {
 function update() {
   if (playerFollowEntityIndex !== null && entities[playerFollowEntityIndex]) {
     const target = entities[playerFollowEntityIndex];
-    const dx = target.x - player.x;
-    const dy = target.y - player.y;
+    // Compute a follow point just outside the entity to maintain a gap
+    const followDist = target.radius + player.radius + ENTITY_FOLLOW_PADDING;
+    const rawAngle = Math.atan2(target.y - player.y, target.x - player.x);
+    const followX = target.x - Math.cos(rawAngle) * followDist;
+    const followY = target.y - Math.sin(rawAngle) * followDist;
+    const dx = followX - player.x;
+    const dy = followY - player.y;
     const dist = Math.sqrt(dx * dx + dy * dy);
-    const angleToEntity = Math.atan2(dy, dx);
-    // Slow down as we approach
-    const slowRadius = Math.max(40 + target.radius, target.radius * 2);
-    let slowFactor = Math.min(1, dist / slowRadius); // 1 far, 0 at center
+    const angleToFollow = Math.atan2(dy, dx);
+    // Slow down as we approach the follow point
+    const slowRadius = Math.max(followDist * 2, target.radius * 2);
+    let slowFactor = Math.min(1, dist / slowRadius);
     // Interpolate maxSpeed and acceleration
     const autoMaxSpeed = 1.5 + (player.maxSpeed - 1.5) * slowFactor;
     const autoAccel = 0.05 + (player.acceleration - 0.05) * slowFactor;
-    // Rotate toward target at normal speed
-    let delta = angleToEntity - player.angle;
+    // Rotate toward the follow point
+    let delta = angleToFollow - player.angle;
     delta = ((delta + Math.PI) % (2 * Math.PI)) - Math.PI;
     if (Math.abs(delta) > player.rotationSpeed) {
       player.angle += Math.sign(delta) * player.rotationSpeed;
-      // Wrap
       player.angle = ((player.angle + Math.PI) % (2 * Math.PI)) - Math.PI;
     } else {
-      player.angle = angleToEntity;
+      player.angle = angleToFollow;
     }
-    // Accelerate forward as if holding up, but scaled
+    // Accelerate forward toward follow point
     player.vx += Math.cos(player.angle) * autoAccel;
     player.vy += Math.sin(player.angle) * autoAccel;
     // Clamp speed
-    const velocity = Math.sqrt(player.vx * player.vx + player.vy * player.vy);
+    const velocity = Math.hypot(player.vx, player.vy);
     if (velocity > autoMaxSpeed) {
       player.vx = (player.vx / velocity) * autoMaxSpeed;
       player.vy = (player.vy / velocity) * autoMaxSpeed;
     }
-    // If within entity radius, stop at center
-    if (dist < target.radius + player.radius) {
+    // Stop when close enough to the follow distance
+    if (dist < 1) {
       player.vx = 0;
       player.vy = 0;
-      // Optionally: playerFollowEntityIndex = null; // stop following when reached
     }
     // Friction is applied below as usual
   } else if (isTraveling && selectedPlanet) {
