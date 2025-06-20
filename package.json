@@ -1,7 +1,7 @@
 {
-  "name": "cell-03-multiplayer",
+  "name": "tooth",
   "version": "1.0.0",
-  "description": "Minimal multiplayer setup for cell-03 proof of concept.",
+  "description": "Multiplayer game concept.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
