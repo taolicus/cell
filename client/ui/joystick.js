@@ -5,6 +5,8 @@ export let joystickActive = false;
 export let joystickCenter = { x: 0, y: 0 };
 export let joystickValue = { x: 0, y: 0 };
 
+import { magnitude } from '../game/mathUtils.js';
+
 export function isTouchDevice() {
   return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 }
@@ -49,7 +51,7 @@ export function updateJoystick(x, y) {
   let dy = y - joystickCenter.y;
   // Clamp to radius 50px
   const maxDist = 50;
-  const dist = Math.sqrt(dx * dx + dy * dy);
+  const dist = magnitude(dx, dy);
   if (dist > maxDist) {
     dx = (dx / dist) * maxDist;
     dy = (dy / dist) * maxDist;

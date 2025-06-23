@@ -1,5 +1,6 @@
 // Entity logic and update loop
 const { WORLD_WIDTH, WORLD_HEIGHT, NUM_ENTITIES } = require('./config');
+const { distance, angleTo, normalizeAngle, magnitude, clamp, lerp } = require('./mathUtils');
 
 function createEntity() {
   return {
@@ -42,9 +43,7 @@ function updateEntities(players) {
         let nearestDist = Infinity;
         // Check players
         for (const p of playerList) {
-          const dx = p.x - entity.x;
-          const dy = p.y - entity.y;
-          const dist = Math.sqrt(dx*dx + dy*dy);
+          const dist = distance(entity.x, entity.y, p.x, p.y);
           if (dist < 400 && dist < nearestDist) { // only follow if within 400 units
             nearest = p.id;
             nearestDist = dist;
@@ -54,9 +53,7 @@ function updateEntities(players) {
         for (let j = 0; j < entities.length; j++) {
           if (j === i) continue;
           const e2 = entities[j];
-          const dx = e2.x - entity.x;
-          const dy = e2.y - entity.y;
-          const dist = Math.sqrt(dx*dx + dy*dy);
+          const dist = distance(entity.x, entity.y, e2.x, e2.y);
           if (dist < 400 && dist < nearestDist) {
             nearest = j;
             nearestDist = dist;
@@ -84,9 +81,7 @@ function updateEntities(players) {
         target = entities[entity.followTargetId];
       }
       if (target) {
-        const dx = target.x - entity.x;
-        const dy = target.y - entity.y;
-        entity.targetAngle = Math.atan2(dy, dx);
+        entity.targetAngle = angleTo(entity, target);
         entity.targetSpeed = entity.maxSpeed * (0.7 + 0.3 * Math.random());
       }
     } else {
@@ -100,7 +95,7 @@ function updateEntities(players) {
       }
     }
     let angleDiff = entity.targetAngle - entity.angle;
-    angleDiff = Math.atan2(Math.sin(angleDiff), Math.cos(angleDiff));
+    angleDiff = normalizeAngle(angleDiff);
     if (Math.abs(angleDiff) < entity.rotationSpeed) {
       entity.angle = entity.targetAngle;
     } else {
@@ -109,7 +104,7 @@ function updateEntities(players) {
     entity.speed += (entity.targetSpeed - entity.speed) * 0.05;
     entity.vx += Math.cos(entity.angle) * entity.acceleration * entity.speed / entity.maxSpeed;
     entity.vy += Math.sin(entity.angle) * entity.acceleration * entity.speed / entity.maxSpeed;
-    let v = Math.sqrt(entity.vx * entity.vx + entity.vy * entity.vy);
+    let v = magnitude(entity.vx, entity.vy);
     if (v > entity.maxSpeed) {
       entity.vx = (entity.vx / v) * entity.maxSpeed;
       entity.vy = (entity.vy / v) * entity.maxSpeed;
@@ -118,8 +113,8 @@ function updateEntities(players) {
     entity.vy *= entity.friction;
     entity.x += entity.vx;
     entity.y += entity.vy;
-    entity.x = Math.max(entity.radius, Math.min(WORLD_WIDTH - entity.radius, entity.x));
-    entity.y = Math.max(entity.radius, Math.min(WORLD_HEIGHT - entity.radius, entity.y));
+    entity.x = clamp(entity.x, entity.radius, WORLD_WIDTH - entity.x);
+    entity.y = clamp(entity.y, entity.radius, WORLD_HEIGHT - entity.y);
   }
 }
 

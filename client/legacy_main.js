@@ -1,3 +1,5 @@
+import { distance, angleTo, normalizeAngle, magnitude, clamp, lerp } from './game/mathUtils.js';
+
 // Canvas and context setup
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
@@ -150,7 +152,7 @@ function updateJoystick(x, y) {
   let dy = y - joystickCenter.y;
   // Clamp to radius 50px
   const maxDist = 50;
-  const dist = Math.sqrt(dx * dx + dy * dy);
+  const dist = magnitude(dx, dy);
   if (dist > maxDist) {
     dx = (dx / dist) * maxDist;
     dy = (dy / dist) * maxDist;
@@ -206,14 +208,14 @@ function updatePlanetTravelButtons() {
           isTraveling = true;
           travelStartTime = Date.now();
           travelFrom = { x: player.x, y: player.y };
-          const distToCenter = Math.sqrt((planet.x - player.x) ** 2 + (planet.y - player.y) ** 2);
+          const distToCenter = distance(player, planet);
           const distToBorder = Math.max(0, distToCenter - planet.radius);
           travelDuration = Math.max(10 * 1000, distToBorder * 1000);
           stopTravelBtn.style.display = 'block';
           travelTurnStart = Date.now();
           travelTurning = true;
           travelInitialAngle = player.angle;
-          travelTargetAngle = Math.atan2(planet.y - player.y, planet.x - player.x);
+          travelTargetAngle = angleTo(player, planet);
         }
       };
       planetTravelBtns.appendChild(btn);
@@ -285,25 +287,21 @@ canvas.addEventListener('click', function(e) {
   const clickY = e.clientY - rect.top + camera.y;
   // Check planets first
   for (const planet of planets) {
-    const dx = clickX - planet.x;
-    const dy = clickY - planet.y;
-    if (Math.sqrt(dx * dx + dy * dy) < planet.radius + 10) {
+    if (magnitude(clickX - planet.x, clickY - planet.y) < planet.radius + 10) {
       selectedPlanet = planet;
       // Start travel
       if (!isTraveling) {
         isTraveling = true;
         travelStartTime = Date.now();
         travelFrom = { x: player.x, y: player.y };
-        // Travel time: 1 unit = 1 second (adjust as needed), measure from border
-        const distToCenter = Math.sqrt((planet.x - player.x) ** 2 + (planet.y - player.y) ** 2);
+        const distToCenter = distance(player, planet);
         const distToBorder = Math.max(0, distToCenter - planet.radius);
-        travelDuration = Math.max(10 * 1000, distToBorder * 1000); // min 10s, else 1 unit = 1s
+        travelDuration = Math.max(10 * 1000, distToBorder * 1000);
         stopTravelBtn.style.display = 'block';
-        // Start smooth turn
         travelTurnStart = Date.now();
         travelTurning = true;
         travelInitialAngle = player.angle;
-        travelTargetAngle = Math.atan2(planet.y - player.y, planet.x - player.x);
+        travelTargetAngle = angleTo(player, planet);
       }
       playerFollowEntityIndex = null; // stop following entity if planet clicked
       return;
@@ -313,9 +311,7 @@ canvas.addEventListener('click', function(e) {
   let foundEntity = false;
   for (let i = 0; i < entities.length; i++) {
     const entity = entities[i];
-    const dx = clickX - entity.x;
-    const dy = clickY - entity.y;
-    if (Math.sqrt(dx * dx + dy * dy) < entity.radius + 10) {
+    if (magnitude(clickX - entity.x, clickY - entity.y) < entity.radius + 10) {
       playerFollowEntityIndex = i;
       foundEntity = true;
       selectedPlanet = null;
@@ -357,12 +353,12 @@ function update() {
     const target = entities[playerFollowEntityIndex];
     // Compute a follow point just outside the entity to maintain a gap
     const followDist = target.radius + player.radius + ENTITY_FOLLOW_PADDING;
-    const rawAngle = Math.atan2(target.y - player.y, target.x - player.x);
+    const rawAngle = angleTo(player, target);
     const followX = target.x - Math.cos(rawAngle) * followDist;
     const followY = target.y - Math.sin(rawAngle) * followDist;
     const dx = followX - player.x;
     const dy = followY - player.y;
-    const dist = Math.sqrt(dx * dx + dy * dy);
+    const dist = magnitude(dx, dy);
     const angleToFollow = Math.atan2(dy, dx);
     // Slow down as we approach the follow point
     const slowRadius = Math.max(followDist * 2, target.radius * 2);
@@ -371,11 +367,10 @@ function update() {
     const autoMaxSpeed = 1.5 + (player.maxSpeed - 1.5) * slowFactor;
     const autoAccel = 0.05 + (player.acceleration - 0.05) * slowFactor;
     // Rotate toward the follow point
-    let delta = angleToFollow - player.angle;
-    delta = ((delta + Math.PI) % (2 * Math.PI)) - Math.PI;
+    let delta = normalizeAngle(angleToFollow - player.angle);
     if (Math.abs(delta) > player.rotationSpeed) {
       player.angle += Math.sign(delta) * player.rotationSpeed;
-      player.angle = ((player.angle + Math.PI) % (2 * Math.PI)) - Math.PI;
+      player.angle = normalizeAngle(player.angle);
     } else {
       player.angle = angleToFollow;
     }
@@ -383,7 +378,7 @@ function update() {
     player.vx += Math.cos(player.angle) * autoAccel;
     player.vy += Math.sin(player.angle) * autoAccel;
     // Clamp speed
-    const velocity = Math.hypot(player.vx, player.vy);
+    const velocity = magnitude(player.vx, player.vy);
     if (velocity > autoMaxSpeed) {
       player.vx = (player.vx / velocity) * autoMaxSpeed;
       player.vy = (player.vy / velocity) * autoMaxSpeed;
@@ -400,21 +395,15 @@ function update() {
       const now = Date.now();
       const t = Math.min(1, (now - travelTurnStart) / travelTurnDuration);
       // Interpolate angle shortest way
-      let delta = travelTargetAngle - travelInitialAngle;
-      // Wrap to [-PI, PI]
-      delta = ((delta + Math.PI) % (2 * Math.PI)) - Math.PI;
-      player.angle = travelInitialAngle + delta * t;
-      // Wrap to [-PI, PI]
-      player.angle = ((player.angle + Math.PI) % (2 * Math.PI)) - Math.PI;
+      let delta = normalizeAngle(travelTargetAngle - travelInitialAngle);
+      player.angle = normalizeAngle(travelInitialAngle + delta * t);
       if (t >= 1) {
         travelTurning = false;
       }
     } else if (!isManualInputActive()) {
       // --- AUTOPILOT: use normal movement mechanics, but slow down near planet ---
-      const dx = selectedPlanet.x - player.x;
-      const dy = selectedPlanet.y - player.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      const angleToPlanet = Math.atan2(dy, dx);
+      const dist = distance(player, selectedPlanet);
+      const angleToPlanet = angleTo(player, selectedPlanet);
       // Slow down as we approach
       const slowRadius = Math.max(ARRIVAL_RADIUS + selectedPlanet.radius, selectedPlanet.radius * 2);
       let slowFactor = Math.min(1, dist / slowRadius); // 1 far, 0 at center
@@ -422,12 +411,10 @@ function update() {
       const autoMaxSpeed = 1.5 + (player.maxSpeed - 1.5) * slowFactor;
       const autoAccel = 0.05 + (player.acceleration - 0.05) * slowFactor;
       // Rotate toward target at normal speed
-      let delta = angleToPlanet - player.angle;
-      delta = ((delta + Math.PI) % (2 * Math.PI)) - Math.PI;
+      let delta = normalizeAngle(angleToPlanet - player.angle);
       if (Math.abs(delta) > player.rotationSpeed) {
         player.angle += Math.sign(delta) * player.rotationSpeed;
-        // Wrap
-        player.angle = ((player.angle + Math.PI) % (2 * Math.PI)) - Math.PI;
+        player.angle = normalizeAngle(player.angle);
       } else {
         player.angle = angleToPlanet;
       }
@@ -435,7 +422,7 @@ function update() {
       player.vx += Math.cos(player.angle) * autoAccel;
       player.vy += Math.sin(player.angle) * autoAccel;
       // Clamp speed
-      const velocity = Math.sqrt(player.vx * player.vx + player.vy * player.vy);
+      const velocity = magnitude(player.vx, player.vy);
       if (velocity > autoMaxSpeed) {
         player.vx = (player.vx / velocity) * autoMaxSpeed;
         player.vy = (player.vy / velocity) * autoMaxSpeed;
@@ -443,9 +430,7 @@ function update() {
       // Friction is applied below as usual
     }
     // Arrival check (always)
-    const dx = selectedPlanet.x - player.x;
-    const dy = selectedPlanet.y - player.y;
-    const dist = Math.sqrt(dx * dx + dy * dy);
+    const dist = distance(player, selectedPlanet);
     // If within planet radius, stop at center
     if (dist < selectedPlanet.radius) {
       player.vx = 0;
@@ -460,7 +445,7 @@ function update() {
   // --- Joystick input (overrides keyboard if active) ---
   if (joystickActive || Math.abs(joystickValue.x) > 0.1 || Math.abs(joystickValue.y) > 0.1) {
     // Calculate magnitude and direction
-    const mag = Math.sqrt(joystickValue.x * joystickValue.x + joystickValue.y * joystickValue.y);
+    const mag = magnitude(joystickValue.x, joystickValue.y);
     if (mag > 0.1) {
       // Joystick direction: atan2(-y, x) because y is inverted (screen coords)
       const joyAngle = Math.atan2(joystickValue.y, joystickValue.x);
@@ -489,7 +474,7 @@ function update() {
     player.vx *= player.friction;
     player.vy *= player.friction;
     // Clamp speed
-    const velocity = Math.sqrt(player.vx * player.vx + player.vy * player.vy);
+    const velocity = magnitude(player.vx, player.vy);
     if (velocity > player.maxSpeed) {
       player.vx = (player.vx / velocity) * player.maxSpeed;
       player.vy = (player.vy / velocity) * player.maxSpeed;
@@ -501,15 +486,15 @@ function update() {
   player.y += player.vy;
 
   // Clamp player to world bounds
-  player.x = Math.max(player.radius, Math.min(WORLD_WIDTH - player.radius, player.x));
-  player.y = Math.max(player.radius, Math.min(WORLD_HEIGHT - player.radius, player.y));
+  player.x = clamp(player.x, player.radius, WORLD_WIDTH - player.radius);
+  player.y = clamp(player.y, player.radius, WORLD_HEIGHT - player.radius);
 
   // Camera follows player, but doesn't go outside world
   const { width: VIEWPORT_WIDTH, height: VIEWPORT_HEIGHT } = getViewportSize();
   camera.x = player.x - VIEWPORT_WIDTH / 2;
   camera.y = player.y - VIEWPORT_HEIGHT / 2;
-  camera.x = Math.max(0, Math.min(WORLD_WIDTH - VIEWPORT_WIDTH, camera.x));
-  camera.y = Math.max(0, Math.min(WORLD_HEIGHT - VIEWPORT_HEIGHT, camera.y));
+  camera.x = clamp(camera.x, 0, WORLD_WIDTH - VIEWPORT_WIDTH);
+  camera.y = clamp(camera.y, 0, WORLD_HEIGHT - VIEWPORT_HEIGHT);
 
   // Send player state to server (throttled)
   if (socket && socket.connected) {

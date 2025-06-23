@@ -7,6 +7,7 @@ import { otherPlayers, playerCount, connectionStatus } from '../network/socket.j
 import { joystickActive, joystickValue } from '../ui/joystick.js';
 import { socket } from '../network/socket.js';
 import { stopTravelBtn, updatePlanetTravelButtons, planetTravelBtns } from '../ui/ui.js';
+import { distance, angleTo, normalizeAngle, magnitude, clamp, lerp } from './mathUtils.js';
 
 function drawEntity(ctx, entity, fillStyle = '#fff', strokeStyle = '#fff') {
   ctx.save();
@@ -58,11 +59,9 @@ function drawPlanetDistances(ctx) {
     ctx.setLineDash([8, 8]);
     ctx.stroke();
     ctx.setLineDash([]);
-    const dx = planet.x - player.x;
-    const dy = planet.y - player.y;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-    const midX = player.x + dx * 0.5;
-    const midY = player.y + dy * 0.5;
+    const dist = distance(player, planet);
+    const midX = player.x + (planet.x - player.x) * 0.5;
+    const midY = player.y + (planet.y - player.y) * 0.5;
     ctx.font = '20px monospace';
     ctx.fillStyle = '#fff';
     ctx.textAlign = 'center';
@@ -117,28 +116,27 @@ function update() {
   if (state.playerFollowEntityIndex !== null && entities[state.playerFollowEntityIndex]) {
     const target = entities[state.playerFollowEntityIndex];
     const followDist = target.radius + player.radius + state.ENTITY_FOLLOW_PADDING;
-    const rawAngle = Math.atan2(target.y - player.y, target.x - player.x);
+    const rawAngle = angleTo(player, target);
     const followX = target.x - Math.cos(rawAngle) * followDist;
     const followY = target.y - Math.sin(rawAngle) * followDist;
     const dx = followX - player.x;
     const dy = followY - player.y;
-    const dist = Math.sqrt(dx * dx + dy * dy);
+    const dist = magnitude(dx, dy);
     const angleToFollow = Math.atan2(dy, dx);
     const slowRadius = Math.max(followDist * 2, target.radius * 2);
     let slowFactor = Math.min(1, dist / slowRadius);
     const autoMaxSpeed = 1.5 + (player.maxSpeed - 1.5) * slowFactor;
     const autoAccel = 0.05 + (player.acceleration - 0.05) * slowFactor;
-    let delta = angleToFollow - player.angle;
-    delta = ((delta + Math.PI) % (2 * Math.PI)) - Math.PI;
+    let delta = normalizeAngle(angleToFollow - player.angle);
     if (Math.abs(delta) > player.rotationSpeed) {
       player.angle += Math.sign(delta) * player.rotationSpeed;
-      player.angle = ((player.angle + Math.PI) % (2 * Math.PI)) - Math.PI;
+      player.angle = normalizeAngle(player.angle);
     } else {
       player.angle = angleToFollow;
     }
     player.vx += Math.cos(player.angle) * autoAccel;
     player.vy += Math.sin(player.angle) * autoAccel;
-    const velocity = Math.hypot(player.vx, player.vy);
+    const velocity = magnitude(player.vx, player.vy);
     if (velocity > autoMaxSpeed) {
       player.vx = (player.vx / velocity) * autoMaxSpeed;
       player.vy = (player.vy / velocity) * autoMaxSpeed;
@@ -151,41 +149,34 @@ function update() {
     if (state.travelTurning) {
       const now = Date.now();
       const t = Math.min(1, (now - state.travelTurnStart) / state.travelTurnDuration);
-      let delta = state.travelTargetAngle - state.travelInitialAngle;
-      delta = ((delta + Math.PI) % (2 * Math.PI)) - Math.PI;
-      player.angle = state.travelInitialAngle + delta * t;
-      player.angle = ((player.angle + Math.PI) % (2 * Math.PI)) - Math.PI;
+      let delta = normalizeAngle(state.travelTargetAngle - state.travelInitialAngle);
+      player.angle = normalizeAngle(state.travelInitialAngle + delta * t);
       if (t >= 1) {
         state.travelTurning = false;
       }
     } else if (!isManualInputActive()) {
-      const dx = state.selectedPlanet.x - player.x;
-      const dy = state.selectedPlanet.y - player.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      const angleToPlanet = Math.atan2(dy, dx);
+      const dist = distance(player, state.selectedPlanet);
+      const angleToPlanet = angleTo(player, state.selectedPlanet);
       const slowRadius = Math.max(state.ARRIVAL_RADIUS + state.selectedPlanet.radius, state.selectedPlanet.radius * 2);
       let slowFactor = Math.min(1, dist / slowRadius);
       const autoMaxSpeed = 1.5 + (player.maxSpeed - 1.5) * slowFactor;
       const autoAccel = 0.05 + (player.acceleration - 0.05) * slowFactor;
-      let delta = angleToPlanet - player.angle;
-      delta = ((delta + Math.PI) % (2 * Math.PI)) - Math.PI;
+      let delta = normalizeAngle(angleToPlanet - player.angle);
       if (Math.abs(delta) > player.rotationSpeed) {
         player.angle += Math.sign(delta) * player.rotationSpeed;
-        player.angle = ((player.angle + Math.PI) % (2 * Math.PI)) - Math.PI;
+        player.angle = normalizeAngle(player.angle);
       } else {
         player.angle = angleToPlanet;
       }
       player.vx += Math.cos(player.angle) * autoAccel;
       player.vy += Math.sin(player.angle) * autoAccel;
-      const velocity = Math.sqrt(player.vx * player.vx + player.vy * player.vy);
+      const velocity = magnitude(player.vx, player.vy);
       if (velocity > autoMaxSpeed) {
         player.vx = (player.vx / velocity) * autoMaxSpeed;
         player.vy = (player.vy / velocity) * autoMaxSpeed;
       }
     }
-    const dx = state.selectedPlanet.x - player.x;
-    const dy = state.selectedPlanet.y - player.y;
-    const dist = Math.sqrt(dx * dx + dy * dy);
+    const dist = distance(player, state.selectedPlanet);
     if (dist < state.selectedPlanet.radius) {
       player.vx = 0;
       player.vy = 0;
@@ -198,7 +189,7 @@ function update() {
   }
   // Joystick input
   if (joystickActive || Math.abs(joystickValue.x) > 0.1 || Math.abs(joystickValue.y) > 0.1) {
-    const mag = Math.sqrt(joystickValue.x * joystickValue.x + joystickValue.y * joystickValue.y);
+    const mag = magnitude(joystickValue.x, joystickValue.y);
     if (mag > 0.1) {
       const joyAngle = Math.atan2(joystickValue.y, joystickValue.x);
       player.angle = joyAngle;
@@ -221,7 +212,7 @@ function update() {
     }
     player.vx *= player.friction;
     player.vy *= player.friction;
-    const velocity = Math.sqrt(player.vx * player.vx + player.vy * player.vy);
+    const velocity = magnitude(player.vx, player.vy);
     if (velocity > player.maxSpeed) {
       player.vx = (player.vx / velocity) * player.maxSpeed;
       player.vy = (player.vy / velocity) * player.maxSpeed;
@@ -229,13 +220,13 @@ function update() {
   }
   player.x += player.vx;
   player.y += player.vy;
-  player.x = Math.max(player.radius, Math.min(6000 - player.radius, player.x));
-  player.y = Math.max(player.radius, Math.min(6000 - player.radius, player.y));
+  player.x = clamp(player.x, player.radius, 6000 - player.radius);
+  player.y = clamp(player.y, player.radius, 6000 - player.radius);
   const { width: VIEWPORT_WIDTH, height: VIEWPORT_HEIGHT } = getViewportSize();
   camera.x = player.x - VIEWPORT_WIDTH / 2;
   camera.y = player.y - VIEWPORT_HEIGHT / 2;
-  camera.x = Math.max(0, Math.min(6000 - VIEWPORT_WIDTH, camera.x));
-  camera.y = Math.max(0, Math.min(6000 - VIEWPORT_HEIGHT, camera.y));
+  camera.x = clamp(camera.x, 0, 6000 - VIEWPORT_WIDTH);
+  camera.y = clamp(camera.y, 0, 6000 - VIEWPORT_HEIGHT);
   if (socket && socket.connected) {
     const now = Date.now();
     if (now - state.lastMoveSent > state.MOVE_SEND_INTERVAL) {
@@ -285,14 +276,10 @@ function draw() {
   // --- Travel Progress Overlay ---
   const state = window._gameState;
   if (state && state.isTraveling && state.selectedPlanet && state.travelFrom) {
-    const dx = state.selectedPlanet.x - player.x;
-    const dy = state.selectedPlanet.y - player.y;
-    const distToCenter = Math.sqrt(dx * dx + dy * dy);
+    const distToCenter = distance(player, state.selectedPlanet);
     const distToBorder = Math.max(0, distToCenter - state.selectedPlanet.radius);
     const estSeconds = Math.ceil(distToBorder / (player.maxSpeed / 2));
-    const origDx = state.selectedPlanet.x - state.travelFrom.x;
-    const origDy = state.selectedPlanet.y - state.travelFrom.y;
-    const origDistToCenter = Math.sqrt(origDx * origDx + origDy * origDy);
+    const origDistToCenter = distance(state.travelFrom, state.selectedPlanet);
     const origDistToBorder = Math.max(0, origDistToCenter - state.selectedPlanet.radius);
     const t = 1 - Math.min(1, distToBorder / (origDistToBorder || 1));
     ctx.save();
@@ -355,14 +342,14 @@ const travelHandlers = {
       state.isTraveling = true;
       state.travelStartTime = Date.now();
       state.travelFrom = { x: player.x, y: player.y };
-      const distToCenter = Math.sqrt((planet.x - player.x) ** 2 + (planet.y - player.y) ** 2);
+      const distToCenter = distance(player, planet);
       const distToBorder = Math.max(0, distToCenter - planet.radius);
       state.travelDuration = Math.max(10 * 1000, distToBorder * 1000);
       state.stopTravelBtn.style.display = 'block';
       state.travelTurnStart = Date.now();
       state.travelTurning = true;
       state.travelInitialAngle = player.angle;
-      state.travelTargetAngle = Math.atan2(planet.y - player.y, planet.x - player.x);
+      state.travelTargetAngle = angleTo(player, planet);
       state.playerFollowEntityIndex = null;
       updatePlanetTravelButtons(planets, state.isTraveling, state.selectedPlanet, travelHandlers);
     }
@@ -389,9 +376,7 @@ canvas.addEventListener('click', function(e) {
   const clickY = e.clientY - rect.top + camera.y;
   // Check planets first
   for (const planet of planets) {
-    const dx = clickX - planet.x;
-    const dy = clickY - planet.y;
-    if (Math.sqrt(dx * dx + dy * dy) < planet.radius + 10) {
+    if (magnitude(clickX - planet.x, clickY - planet.y) < planet.radius + 10) {
       if (!state.isTraveling) {
         travelHandlers.onTravel(planet);
       }
@@ -404,9 +389,7 @@ canvas.addEventListener('click', function(e) {
   let foundEntity = false;
   for (let i = 0; i < entities.length; i++) {
     const entity = entities[i];
-    const dx = clickX - entity.x;
-    const dy = clickY - entity.y;
-    if (Math.sqrt(dx * dx + dy * dy) < entity.radius + 10) {
+    if (magnitude(clickX - entity.x, clickY - entity.y) < entity.radius + 10) {
       state.playerFollowEntityIndex = i;
       foundEntity = true;
       state.selectedPlanet = null;
