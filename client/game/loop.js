@@ -6,7 +6,7 @@ import { canvas, ctx, getViewportSize } from './canvas.js';
 import { otherPlayers, playerCount, connectionStatus } from '../network/socket.js';
 import { joystickActive, joystickValue } from '../ui/joystick.js';
 import { socket } from '../network/socket.js';
-import { stopTravelBtn } from '../ui/ui.js';
+import { stopTravelBtn, updatePlanetTravelButtons, planetTravelBtns } from '../ui/ui.js';
 
 function drawEntity(ctx, entity, fillStyle = '#fff', strokeStyle = '#fff') {
   ctx.save();
@@ -76,6 +76,14 @@ function drawPlanetDistances(ctx) {
 const keys = {};
 window.addEventListener('keydown', e => { keys[e.key] = true; });
 window.addEventListener('keyup', e => { keys[e.key] = false; });
+
+function isManualInputActive() {
+  // Keyboard
+  if (keys['ArrowLeft'] || keys['a'] || keys['ArrowRight'] || keys['d'] || keys['ArrowUp'] || keys['w'] || keys['ArrowDown'] || keys['s']) return true;
+  // Joystick
+  if (joystickActive || Math.abs(joystickValue.x) > 0.1 || Math.abs(joystickValue.y) > 0.1) return true;
+  return false;
+}
 
 // --- Update logic ---
 function update() {
@@ -150,7 +158,7 @@ function update() {
       if (t >= 1) {
         state.travelTurning = false;
       }
-    } else {
+    } else if (!isManualInputActive()) {
       const dx = state.selectedPlanet.x - player.x;
       const dy = state.selectedPlanet.y - player.y;
       const dist = Math.sqrt(dx * dx + dy * dy);
@@ -185,7 +193,7 @@ function update() {
       state.selectedPlanet = null;
       state.stopTravelBtn.style.display = 'none';
       state.travelTurning = false;
-      // updatePlanetTravelButtons();
+      updateTravelUI();
     }
   }
   // Joystick input
@@ -273,6 +281,37 @@ function draw() {
   drawPlanets(ctx);
   drawPlanetDistances(ctx);
   ctx.restore();
+
+  // --- Travel Progress Overlay ---
+  const state = window._gameState;
+  if (state && state.isTraveling && state.selectedPlanet && state.travelFrom) {
+    const dx = state.selectedPlanet.x - player.x;
+    const dy = state.selectedPlanet.y - player.y;
+    const distToCenter = Math.sqrt(dx * dx + dy * dy);
+    const distToBorder = Math.max(0, distToCenter - state.selectedPlanet.radius);
+    const estSeconds = Math.ceil(distToBorder / (player.maxSpeed / 2));
+    const origDx = state.selectedPlanet.x - state.travelFrom.x;
+    const origDy = state.selectedPlanet.y - state.travelFrom.y;
+    const origDistToCenter = Math.sqrt(origDx * origDx + origDy * origDy);
+    const origDistToBorder = Math.max(0, origDistToCenter - state.selectedPlanet.radius);
+    const t = 1 - Math.min(1, distToBorder / (origDistToBorder || 1));
+    ctx.save();
+    ctx.globalAlpha = 0.85;
+    ctx.fillStyle = '#222';
+    ctx.fillRect(canvas.width / 2 - 180, canvas.height - 60, 360, 40);
+    ctx.globalAlpha = 1.0;
+    ctx.strokeStyle = '#fff';
+    ctx.strokeRect(canvas.width / 2 - 180, canvas.height - 60, 360, 40);
+    ctx.fillStyle = '#4af';
+    ctx.fillRect(canvas.width / 2 - 178, canvas.height - 58, 356 * t, 36);
+    ctx.font = '22px monospace';
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`Traveling to ${state.selectedPlanet.name}... ~${estSeconds}s left`, canvas.width / 2, canvas.height - 40);
+    ctx.restore();
+  }
+
   ctx.save();
   ctx.font = '20px monospace';
   ctx.fillStyle = '#fff';
@@ -306,3 +345,92 @@ export function gameLoop() {
   draw();
   requestAnimationFrame(gameLoop);
 }
+
+// Setup travelHandlers for UI buttons
+const travelHandlers = {
+  onTravel: (planet) => {
+    const state = window._gameState;
+    if (!state.isTraveling) {
+      state.selectedPlanet = planet;
+      state.isTraveling = true;
+      state.travelStartTime = Date.now();
+      state.travelFrom = { x: player.x, y: player.y };
+      const distToCenter = Math.sqrt((planet.x - player.x) ** 2 + (planet.y - player.y) ** 2);
+      const distToBorder = Math.max(0, distToCenter - planet.radius);
+      state.travelDuration = Math.max(10 * 1000, distToBorder * 1000);
+      state.stopTravelBtn.style.display = 'block';
+      state.travelTurnStart = Date.now();
+      state.travelTurning = true;
+      state.travelInitialAngle = player.angle;
+      state.travelTargetAngle = Math.atan2(planet.y - player.y, planet.x - player.x);
+      state.playerFollowEntityIndex = null;
+      updatePlanetTravelButtons(planets, state.isTraveling, state.selectedPlanet, travelHandlers);
+    }
+  }
+};
+
+// Initial UI setup
+window.addEventListener('DOMContentLoaded', () => {
+  const state = window._gameState || {};
+  updatePlanetTravelButtons(planets, state.isTraveling, state.selectedPlanet, travelHandlers);
+});
+
+// Update UI when travel state changes (call after arrival or stop)
+function updateTravelUI() {
+  const state = window._gameState;
+  updatePlanetTravelButtons(planets, state.isTraveling, state.selectedPlanet, travelHandlers);
+}
+
+// Add click handler for canvas to support click-to-travel/follow
+canvas.addEventListener('click', function(e) {
+  const state = window._gameState;
+  const rect = canvas.getBoundingClientRect();
+  const clickX = e.clientX - rect.left + camera.x;
+  const clickY = e.clientY - rect.top + camera.y;
+  // Check planets first
+  for (const planet of planets) {
+    const dx = clickX - planet.x;
+    const dy = clickY - planet.y;
+    if (Math.sqrt(dx * dx + dy * dy) < planet.radius + 10) {
+      if (!state.isTraveling) {
+        travelHandlers.onTravel(planet);
+      }
+      state.playerFollowEntityIndex = null;
+      updateTravelUI();
+      return;
+    }
+  }
+  // Check entities
+  let foundEntity = false;
+  for (let i = 0; i < entities.length; i++) {
+    const entity = entities[i];
+    const dx = clickX - entity.x;
+    const dy = clickY - entity.y;
+    if (Math.sqrt(dx * dx + dy * dy) < entity.radius + 10) {
+      state.playerFollowEntityIndex = i;
+      foundEntity = true;
+      state.selectedPlanet = null;
+      state.isTraveling = false;
+      state.stopTravelBtn.style.display = 'none';
+      updateTravelUI();
+      break;
+    }
+  }
+  if (!foundEntity) {
+    state.playerFollowEntityIndex = null; // click on empty space stops following
+    updateTravelUI();
+  }
+});
+
+// Patch: update UI when travel ends (arrival or stop)
+// Call updateTravelUI() in the travel arrival logic and stopTravelBtn handler
+
+// Patch stopTravelBtn to update UI when clicked
+stopTravelBtn.addEventListener('click', () => {
+  const state = window._gameState;
+  state.isTraveling = false;
+  state.selectedPlanet = null;
+  state.stopTravelBtn.style.display = 'none';
+  state.travelTurning = false;
+  updateTravelUI();
+});
