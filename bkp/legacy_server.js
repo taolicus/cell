@@ -1,9 +1,16 @@
-const express = require('express');
-const http = require('http');
-const { Server } = require('socket.io');
-const path = require('path');
-const cors = require('cors');
-const { distance, angleTo, normalizeAngle, magnitude, clamp, lerp } = require('./mathUtils');
+const express = require("express");
+const http = require("http");
+const { Server } = require("socket.io");
+const path = require("path");
+const cors = require("cors");
+const {
+  distance,
+  angleTo,
+  normalizeAngle,
+  magnitude,
+  clamp,
+  lerp,
+} = require("./math");
 
 const app = express();
 const server = http.createServer(app);
@@ -38,14 +45,17 @@ function createEntity() {
     rotationSpeed: 0.04,
     changeDirCooldown: 0,
     followTargetId: null, // index of entity or 'player:<socketId>'
-    followCooldown: 0
+    followCooldown: 0,
   };
 }
 let entities = Array.from({ length: NUM_ENTITIES }, createEntity);
 
 function updateEntities() {
   // Gather all possible targets (players and entities)
-  const playerList = Object.entries(players).map(([id, p]) => ({...p, id: 'player:' + id}));
+  const playerList = Object.entries(players).map(([id, p]) => ({
+    ...p,
+    id: "player:" + id,
+  }));
   for (let i = 0; i < entities.length; i++) {
     const entity = entities[i];
     // Handle follow cooldown
@@ -62,7 +72,8 @@ function updateEntities() {
         // Check players
         for (const p of playerList) {
           const dist = distance(entity, p);
-          if (dist < 400 && dist < nearestDist) { // only follow if within 400 units
+          if (dist < 400 && dist < nearestDist) {
+            // only follow if within 400 units
             nearest = p.id;
             nearestDist = dist;
           }
@@ -92,10 +103,16 @@ function updateEntities() {
     // If following, set targetAngle toward target
     if (entity.followTargetId !== null) {
       let target = null;
-      if (typeof entity.followTargetId === 'string' && entity.followTargetId.startsWith('player:')) {
+      if (
+        typeof entity.followTargetId === "string" &&
+        entity.followTargetId.startsWith("player:")
+      ) {
         const pid = entity.followTargetId.slice(7);
         if (players[pid]) target = players[pid];
-      } else if (typeof entity.followTargetId === 'number' && entities[entity.followTargetId]) {
+      } else if (
+        typeof entity.followTargetId === "number" &&
+        entities[entity.followTargetId]
+      ) {
         target = entities[entity.followTargetId];
       }
       if (target) {
@@ -120,8 +137,12 @@ function updateEntities() {
       entity.angle += Math.sign(angleDiff) * entity.rotationSpeed;
     }
     entity.speed += (entity.targetSpeed - entity.speed) * 0.05;
-    entity.vx += Math.cos(entity.angle) * entity.acceleration * entity.speed / entity.maxSpeed;
-    entity.vy += Math.sin(entity.angle) * entity.acceleration * entity.speed / entity.maxSpeed;
+    entity.vx +=
+      (Math.cos(entity.angle) * entity.acceleration * entity.speed) /
+      entity.maxSpeed;
+    entity.vy +=
+      (Math.sin(entity.angle) * entity.acceleration * entity.speed) /
+      entity.maxSpeed;
     let v = magnitude(entity.vx, entity.vy);
     if (v > entity.maxSpeed) {
       entity.vx = (entity.vx / v) * entity.maxSpeed;
@@ -139,46 +160,56 @@ function updateEntities() {
 // --- Entity update loop ---
 setInterval(() => {
   updateEntities();
-  io.emit('entities', entities);
+  io.emit("entities", entities);
 }, 50);
 
 app.use(cors());
 
 // Health check endpoint
-app.get('/health', (req, res) => res.send('OK'));
+app.get("/health", (req, res) => res.send("OK"));
 
 // --- Rate limiting for move events ---
 const MOVE_INTERVAL_MS = 33; // ~30Hz
 const lastMoveTimestamps = {};
 
-io.on('connection', (socket) => {
+io.on("connection", (socket) => {
   // Send world size to the client
-  socket.emit('worldSize', { width: WORLD_WIDTH, height: WORLD_HEIGHT });
+  socket.emit("worldSize", { width: WORLD_WIDTH, height: WORLD_HEIGHT });
   // Spawn all players at the center
-  players[socket.id] = { x: WORLD_WIDTH / 2, y: WORLD_HEIGHT / 2, angle: 0, vx: 0, vy: 0, radius: 20 };
+  players[socket.id] = {
+    x: WORLD_WIDTH / 2,
+    y: WORLD_HEIGHT / 2,
+    angle: 0,
+    vx: 0,
+    vy: 0,
+    radius: 20,
+  };
 
   // Send all players to everyone
-  io.emit('players', players);
+  io.emit("players", players);
   // Send current entities to the new client
-  socket.emit('entities', entities);
+  socket.emit("entities", entities);
 
-  socket.on('move', (data) => {
+  socket.on("move", (data) => {
     const now = Date.now();
-    if (!lastMoveTimestamps[socket.id] || now - lastMoveTimestamps[socket.id] > MOVE_INTERVAL_MS) {
+    if (
+      !lastMoveTimestamps[socket.id] ||
+      now - lastMoveTimestamps[socket.id] > MOVE_INTERVAL_MS
+    ) {
       players[socket.id] = { ...players[socket.id], ...data };
-      io.emit('players', players);
+      io.emit("players", players);
       lastMoveTimestamps[socket.id] = now;
     }
   });
 
-  socket.on('disconnect', () => {
+  socket.on("disconnect", () => {
     delete players[socket.id];
     delete lastMoveTimestamps[socket.id];
-    io.emit('players', players);
+    io.emit("players", players);
   });
 });
 
-const HOST = process.env.HOST || '0.0.0.0';
+const HOST = process.env.HOST || "0.0.0.0";
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, HOST, () => {
   console.log(`Server running at http://${HOST}:${PORT}`);

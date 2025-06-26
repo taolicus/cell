@@ -1,15 +1,30 @@
 // Game loop and update/draw cycle
-import { player, camera } from './player.js';
-import { entities } from './entities.js';
-import { planets } from './planets.js';
-import { canvas, ctx, getViewportSize } from './canvas.js';
-import { otherPlayers, playerCount, connectionStatus } from '../network/socket.js';
-import { joystickActive, joystickValue } from '../ui/joystick.js';
-import { socket } from '../network/socket.js';
-import { stopTravelBtn, updatePlanetTravelButtons, planetTravelBtns } from '../ui/ui.js';
-import { distance, angleTo, normalizeAngle, magnitude, clamp, lerp } from './mathUtils.js';
+import { player, camera } from "./player.js";
+import { entities } from "./entities.js";
+import { planets } from "./planets.js";
+import { canvas, ctx, getViewportSize } from "./canvas.js";
+import {
+  otherPlayers,
+  playerCount,
+  connectionStatus,
+} from "../network/socket.js";
+import { joystickActive, joystickValue } from "../ui/joystick.js";
+import { socket } from "../network/socket.js";
+import {
+  stopTravelBtn,
+  updatePlanetTravelButtons,
+  planetTravelBtns,
+} from "../ui/ui.js";
+import {
+  distance,
+  angleTo,
+  normalizeAngle,
+  magnitude,
+  clamp,
+  lerp,
+} from "./math.js";
 
-function drawEntity(ctx, entity, fillStyle = '#fff', strokeStyle = '#fff') {
+function drawEntity(ctx, entity, fillStyle = "#fff", strokeStyle = "#fff") {
   ctx.save();
   ctx.fillStyle = fillStyle;
   ctx.beginPath();
@@ -37,12 +52,12 @@ function drawPlanets(ctx) {
     ctx.fill();
     ctx.globalAlpha = 1.0;
     ctx.lineWidth = 4;
-    ctx.strokeStyle = '#fff';
+    ctx.strokeStyle = "#fff";
     ctx.stroke();
-    ctx.font = 'bold 28px monospace';
-    ctx.fillStyle = '#fff';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'top';
+    ctx.font = "bold 28px monospace";
+    ctx.fillStyle = "#fff";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
     ctx.fillText(planet.name, planet.x, planet.y + planet.radius + 8);
     ctx.restore();
   }
@@ -54,7 +69,7 @@ function drawPlanetDistances(ctx) {
     ctx.beginPath();
     ctx.moveTo(player.x, player.y);
     ctx.lineTo(planet.x, planet.y);
-    ctx.strokeStyle = '#fff6';
+    ctx.strokeStyle = "#fff6";
     ctx.lineWidth = 2;
     ctx.setLineDash([8, 8]);
     ctx.stroke();
@@ -62,10 +77,10 @@ function drawPlanetDistances(ctx) {
     const dist = distance(player, planet);
     const midX = player.x + (planet.x - player.x) * 0.5;
     const midY = player.y + (planet.y - player.y) * 0.5;
-    ctx.font = '20px monospace';
-    ctx.fillStyle = '#fff';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'bottom';
+    ctx.font = "20px monospace";
+    ctx.fillStyle = "#fff";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "bottom";
     ctx.fillText(`${dist.toFixed(0)} units`, midX, midY - 8);
     ctx.restore();
   }
@@ -73,14 +88,33 @@ function drawPlanetDistances(ctx) {
 
 // --- Input state ---
 const keys = {};
-window.addEventListener('keydown', e => { keys[e.key] = true; });
-window.addEventListener('keyup', e => { keys[e.key] = false; });
+window.addEventListener("keydown", (e) => {
+  keys[e.key] = true;
+});
+window.addEventListener("keyup", (e) => {
+  keys[e.key] = false;
+});
 
 function isManualInputActive() {
   // Keyboard
-  if (keys['ArrowLeft'] || keys['a'] || keys['ArrowRight'] || keys['d'] || keys['ArrowUp'] || keys['w'] || keys['ArrowDown'] || keys['s']) return true;
+  if (
+    keys["ArrowLeft"] ||
+    keys["a"] ||
+    keys["ArrowRight"] ||
+    keys["d"] ||
+    keys["ArrowUp"] ||
+    keys["w"] ||
+    keys["ArrowDown"] ||
+    keys["s"]
+  )
+    return true;
   // Joystick
-  if (joystickActive || Math.abs(joystickValue.x) > 0.1 || Math.abs(joystickValue.y) > 0.1) return true;
+  if (
+    joystickActive ||
+    Math.abs(joystickValue.x) > 0.1 ||
+    Math.abs(joystickValue.y) > 0.1
+  )
+    return true;
   return false;
 }
 
@@ -113,9 +147,13 @@ function update() {
     state.initialized = true;
   }
   // --- Follow entity logic ---
-  if (state.playerFollowEntityIndex !== null && entities[state.playerFollowEntityIndex]) {
+  if (
+    state.playerFollowEntityIndex !== null &&
+    entities[state.playerFollowEntityIndex]
+  ) {
     const target = entities[state.playerFollowEntityIndex];
-    const followDist = target.radius + player.radius + state.ENTITY_FOLLOW_PADDING;
+    const followDist =
+      target.radius + player.radius + state.ENTITY_FOLLOW_PADDING;
     const rawAngle = angleTo(player, target);
     const followX = target.x - Math.cos(rawAngle) * followDist;
     const followY = target.y - Math.sin(rawAngle) * followDist;
@@ -148,8 +186,13 @@ function update() {
   } else if (state.isTraveling && state.selectedPlanet) {
     if (state.travelTurning) {
       const now = Date.now();
-      const t = Math.min(1, (now - state.travelTurnStart) / state.travelTurnDuration);
-      let delta = normalizeAngle(state.travelTargetAngle - state.travelInitialAngle);
+      const t = Math.min(
+        1,
+        (now - state.travelTurnStart) / state.travelTurnDuration
+      );
+      let delta = normalizeAngle(
+        state.travelTargetAngle - state.travelInitialAngle
+      );
       player.angle = normalizeAngle(state.travelInitialAngle + delta * t);
       if (t >= 1) {
         state.travelTurning = false;
@@ -157,7 +200,10 @@ function update() {
     } else if (!isManualInputActive()) {
       const dist = distance(player, state.selectedPlanet);
       const angleToPlanet = angleTo(player, state.selectedPlanet);
-      const slowRadius = Math.max(state.ARRIVAL_RADIUS + state.selectedPlanet.radius, state.selectedPlanet.radius * 2);
+      const slowRadius = Math.max(
+        state.ARRIVAL_RADIUS + state.selectedPlanet.radius,
+        state.selectedPlanet.radius * 2
+      );
       let slowFactor = Math.min(1, dist / slowRadius);
       const autoMaxSpeed = 1.5 + (player.maxSpeed - 1.5) * slowFactor;
       const autoAccel = 0.05 + (player.acceleration - 0.05) * slowFactor;
@@ -182,13 +228,17 @@ function update() {
       player.vy = 0;
       state.isTraveling = false;
       state.selectedPlanet = null;
-      state.stopTravelBtn.style.display = 'none';
+      state.stopTravelBtn.style.display = "none";
       state.travelTurning = false;
       updateTravelUI();
     }
   }
   // Joystick input
-  if (joystickActive || Math.abs(joystickValue.x) > 0.1 || Math.abs(joystickValue.y) > 0.1) {
+  if (
+    joystickActive ||
+    Math.abs(joystickValue.x) > 0.1 ||
+    Math.abs(joystickValue.y) > 0.1
+  ) {
     const mag = magnitude(joystickValue.x, joystickValue.y);
     if (mag > 0.1) {
       const joyAngle = Math.atan2(joystickValue.y, joystickValue.x);
@@ -200,13 +250,13 @@ function update() {
       player.vy *= player.friction;
     }
   } else {
-    if (keys['ArrowLeft'] || keys['a']) player.angle -= player.rotationSpeed;
-    if (keys['ArrowRight'] || keys['d']) player.angle += player.rotationSpeed;
-    if (keys['ArrowUp'] || keys['w']) {
+    if (keys["ArrowLeft"] || keys["a"]) player.angle -= player.rotationSpeed;
+    if (keys["ArrowRight"] || keys["d"]) player.angle += player.rotationSpeed;
+    if (keys["ArrowUp"] || keys["w"]) {
       player.vx += Math.cos(player.angle) * player.acceleration;
       player.vy += Math.sin(player.angle) * player.acceleration;
     }
-    if (keys['ArrowDown'] || keys['s']) {
+    if (keys["ArrowDown"] || keys["s"]) {
       player.vx *= 0.96;
       player.vy *= 0.96;
     }
@@ -230,13 +280,13 @@ function update() {
   if (socket && socket.connected) {
     const now = Date.now();
     if (now - state.lastMoveSent > state.MOVE_SEND_INTERVAL) {
-      socket.emit('move', {
+      socket.emit("move", {
         x: player.x,
         y: player.y,
         angle: player.angle,
         vx: player.vx,
         vy: player.vy,
-        radius: player.radius
+        radius: player.radius,
       });
       state.lastMoveSent = now;
     }
@@ -248,7 +298,7 @@ function draw() {
   ctx.clearRect(0, 0, VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
   ctx.save();
   ctx.translate(-camera.x, -camera.y);
-  ctx.strokeStyle = '#444';
+  ctx.strokeStyle = "#444";
   for (let x = 0; x <= 6000; x += 100) {
     ctx.beginPath();
     ctx.moveTo(x, 0);
@@ -262,13 +312,13 @@ function draw() {
     ctx.stroke();
   }
   for (const entity of entities) {
-    drawEntity(ctx, entity, '#f55', '#fff');
+    drawEntity(ctx, entity, "#f55", "#fff");
   }
   for (const id in otherPlayers) {
     const p = otherPlayers[id];
-    drawEntity(ctx, p, '#09f', '#fff');
+    drawEntity(ctx, p, "#09f", "#fff");
   }
-  drawEntity(ctx, player, '#0f0', '#fff');
+  drawEntity(ctx, player, "#0f0", "#fff");
   drawPlanets(ctx);
   drawPlanetDistances(ctx);
   ctx.restore();
@@ -277,48 +327,58 @@ function draw() {
   const state = window._gameState;
   if (state && state.isTraveling && state.selectedPlanet && state.travelFrom) {
     const distToCenter = distance(player, state.selectedPlanet);
-    const distToBorder = Math.max(0, distToCenter - state.selectedPlanet.radius);
+    const distToBorder = Math.max(
+      0,
+      distToCenter - state.selectedPlanet.radius
+    );
     const estSeconds = Math.ceil(distToBorder / (player.maxSpeed / 2));
     const origDistToCenter = distance(state.travelFrom, state.selectedPlanet);
-    const origDistToBorder = Math.max(0, origDistToCenter - state.selectedPlanet.radius);
+    const origDistToBorder = Math.max(
+      0,
+      origDistToCenter - state.selectedPlanet.radius
+    );
     const t = 1 - Math.min(1, distToBorder / (origDistToBorder || 1));
     ctx.save();
     ctx.globalAlpha = 0.85;
-    ctx.fillStyle = '#222';
+    ctx.fillStyle = "#222";
     ctx.fillRect(canvas.width / 2 - 180, canvas.height - 60, 360, 40);
     ctx.globalAlpha = 1.0;
-    ctx.strokeStyle = '#fff';
+    ctx.strokeStyle = "#fff";
     ctx.strokeRect(canvas.width / 2 - 180, canvas.height - 60, 360, 40);
-    ctx.fillStyle = '#4af';
+    ctx.fillStyle = "#4af";
     ctx.fillRect(canvas.width / 2 - 178, canvas.height - 58, 356 * t, 36);
-    ctx.font = '22px monospace';
-    ctx.fillStyle = '#fff';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(`Traveling to ${state.selectedPlanet.name}... ~${estSeconds}s left`, canvas.width / 2, canvas.height - 40);
+    ctx.font = "22px monospace";
+    ctx.fillStyle = "#fff";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(
+      `Traveling to ${state.selectedPlanet.name}... ~${estSeconds}s left`,
+      canvas.width / 2,
+      canvas.height - 40
+    );
     ctx.restore();
   }
 
   ctx.save();
-  ctx.font = '20px monospace';
-  ctx.fillStyle = '#fff';
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'top';
+  ctx.font = "20px monospace";
+  ctx.fillStyle = "#fff";
+  ctx.textAlign = "left";
+  ctx.textBaseline = "top";
   const coordText = `X: ${player.x.toFixed(0)}  Y: ${player.y.toFixed(0)}`;
   ctx.fillText(coordText, 12, 12);
   ctx.fillText(`Players: ${playerCount}`, 12, 36);
-  if (connectionStatus !== 'connected') {
+  if (connectionStatus !== "connected") {
     ctx.save();
     ctx.globalAlpha = 0.8;
-    ctx.fillStyle = '#222';
+    ctx.fillStyle = "#222";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.globalAlpha = 1.0;
-    ctx.fillStyle = '#fff';
-    ctx.font = '40px monospace';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
+    ctx.fillStyle = "#fff";
+    ctx.font = "40px monospace";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
     ctx.fillText(
-      connectionStatus === 'connecting' ? 'Connecting...' : 'Disconnected',
+      connectionStatus === "connecting" ? "Connecting..." : "Disconnected",
       canvas.width / 2,
       canvas.height / 2
     );
@@ -345,31 +405,46 @@ const travelHandlers = {
       const distToCenter = distance(player, planet);
       const distToBorder = Math.max(0, distToCenter - planet.radius);
       state.travelDuration = Math.max(10 * 1000, distToBorder * 1000);
-      state.stopTravelBtn.style.display = 'block';
+      state.stopTravelBtn.style.display = "block";
       state.travelTurnStart = Date.now();
       state.travelTurning = true;
       state.travelInitialAngle = player.angle;
       state.travelTargetAngle = angleTo(player, planet);
       state.playerFollowEntityIndex = null;
-      updatePlanetTravelButtons(planets, state.isTraveling, state.selectedPlanet, travelHandlers);
+      updatePlanetTravelButtons(
+        planets,
+        state.isTraveling,
+        state.selectedPlanet,
+        travelHandlers
+      );
     }
-  }
+  },
 };
 
 // Initial UI setup
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener("DOMContentLoaded", () => {
   const state = window._gameState || {};
-  updatePlanetTravelButtons(planets, state.isTraveling, state.selectedPlanet, travelHandlers);
+  updatePlanetTravelButtons(
+    planets,
+    state.isTraveling,
+    state.selectedPlanet,
+    travelHandlers
+  );
 });
 
 // Update UI when travel state changes (call after arrival or stop)
 function updateTravelUI() {
   const state = window._gameState;
-  updatePlanetTravelButtons(planets, state.isTraveling, state.selectedPlanet, travelHandlers);
+  updatePlanetTravelButtons(
+    planets,
+    state.isTraveling,
+    state.selectedPlanet,
+    travelHandlers
+  );
 }
 
 // Add click handler for canvas to support click-to-travel/follow
-canvas.addEventListener('click', function(e) {
+canvas.addEventListener("click", function (e) {
   const state = window._gameState;
   const rect = canvas.getBoundingClientRect();
   const clickX = e.clientX - rect.left + camera.x;
@@ -394,7 +469,7 @@ canvas.addEventListener('click', function(e) {
       foundEntity = true;
       state.selectedPlanet = null;
       state.isTraveling = false;
-      state.stopTravelBtn.style.display = 'none';
+      state.stopTravelBtn.style.display = "none";
       updateTravelUI();
       break;
     }
@@ -409,11 +484,11 @@ canvas.addEventListener('click', function(e) {
 // Call updateTravelUI() in the travel arrival logic and stopTravelBtn handler
 
 // Patch stopTravelBtn to update UI when clicked
-stopTravelBtn.addEventListener('click', () => {
+stopTravelBtn.addEventListener("click", () => {
   const state = window._gameState;
   state.isTraveling = false;
   state.selectedPlanet = null;
-  state.stopTravelBtn.style.display = 'none';
+  state.stopTravelBtn.style.display = "none";
   state.travelTurning = false;
   updateTravelUI();
 });

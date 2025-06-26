@@ -1,6 +1,13 @@
 // Entity logic and update loop
-const { WORLD_WIDTH, WORLD_HEIGHT, NUM_ENTITIES } = require('./config');
-const { distance, angleTo, normalizeAngle, magnitude, clamp, lerp } = require('./mathUtils');
+const { WORLD_WIDTH, WORLD_HEIGHT, NUM_ENTITIES } = require("./config");
+const {
+  distance,
+  angleTo,
+  normalizeAngle,
+  magnitude,
+  clamp,
+  lerp,
+} = require("./math");
 
 function createEntity() {
   return {
@@ -19,7 +26,7 @@ function createEntity() {
     rotationSpeed: 0.04,
     changeDirCooldown: 0,
     followTargetId: null, // index of entity or 'player:<socketId>'
-    followCooldown: 0
+    followCooldown: 0,
   };
 }
 
@@ -27,7 +34,10 @@ const entities = Array.from({ length: NUM_ENTITIES }, createEntity);
 
 function updateEntities(players) {
   // Gather all possible targets (players and entities)
-  const playerList = Object.entries(players).map(([id, p]) => ({...p, id: 'player:' + id}));
+  const playerList = Object.entries(players).map(([id, p]) => ({
+    ...p,
+    id: "player:" + id,
+  }));
   for (let i = 0; i < entities.length; i++) {
     const entity = entities[i];
     // Handle follow cooldown
@@ -44,7 +54,8 @@ function updateEntities(players) {
         // Check players
         for (const p of playerList) {
           const dist = distance(entity.x, entity.y, p.x, p.y);
-          if (dist < 400 && dist < nearestDist) { // only follow if within 400 units
+          if (dist < 400 && dist < nearestDist) {
+            // only follow if within 400 units
             nearest = p.id;
             nearestDist = dist;
           }
@@ -74,10 +85,16 @@ function updateEntities(players) {
     // If following, set targetAngle toward target
     if (entity.followTargetId !== null) {
       let target = null;
-      if (typeof entity.followTargetId === 'string' && entity.followTargetId.startsWith('player:')) {
+      if (
+        typeof entity.followTargetId === "string" &&
+        entity.followTargetId.startsWith("player:")
+      ) {
         const pid = entity.followTargetId.slice(7);
         if (players[pid]) target = players[pid];
-      } else if (typeof entity.followTargetId === 'number' && entities[entity.followTargetId]) {
+      } else if (
+        typeof entity.followTargetId === "number" &&
+        entities[entity.followTargetId]
+      ) {
         target = entities[entity.followTargetId];
       }
       if (target) {
@@ -102,8 +119,12 @@ function updateEntities(players) {
       entity.angle += Math.sign(angleDiff) * entity.rotationSpeed;
     }
     entity.speed += (entity.targetSpeed - entity.speed) * 0.05;
-    entity.vx += Math.cos(entity.angle) * entity.acceleration * entity.speed / entity.maxSpeed;
-    entity.vy += Math.sin(entity.angle) * entity.acceleration * entity.speed / entity.maxSpeed;
+    entity.vx +=
+      (Math.cos(entity.angle) * entity.acceleration * entity.speed) /
+      entity.maxSpeed;
+    entity.vy +=
+      (Math.sin(entity.angle) * entity.acceleration * entity.speed) /
+      entity.maxSpeed;
     let v = magnitude(entity.vx, entity.vy);
     if (v > entity.maxSpeed) {
       entity.vx = (entity.vx / v) * entity.maxSpeed;
