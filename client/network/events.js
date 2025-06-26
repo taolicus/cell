@@ -1,6 +1,10 @@
 // Network event handlers
 import { gameState } from '../game/state.js';
 import { entities } from '../game/entities.js';
+import { updateWorldSize, setServerPositionReceived } from '../game/player.js';
+import { updatePlanets } from '../game/planets.js';
+import { player } from '../game/player.js';
+import { camera } from '../game/camera.js';
 
 export let otherPlayers = {};
 export let mySocketId = null;
@@ -11,17 +15,7 @@ export function setupNetworkEvents(socket) {
   socket.on('connect', () => {
     mySocketId = socket.id;
     connectionStatus = 'connected';
-
-    // Send initial state
-    const player = gameState.getPlayer();
-    socket.emit('move', {
-      x: player.x,
-      y: player.y,
-      angle: player.angle,
-      vx: player.vx,
-      vy: player.vy,
-      radius: player.radius
-    });
+    // Don't send initial state - wait for server to provide position
   });
 
   socket.on('disconnect', () => {
@@ -43,7 +37,27 @@ export function setupNetworkEvents(socket) {
   });
 
   socket.on('worldSize', (size) => {
-    // Optionally update world size here
+    // Update world size when received from server
+    console.log('Received world size from server:', size);
+    updateWorldSize(size.width, size.height);
+  });
+
+  socket.on('planets', (serverPlanets) => {
+    // Update planets when received from server
+    console.log('Received planets from server:', serverPlanets);
+    updatePlanets(serverPlanets);
+  });
+
+  socket.on('playerPosition', (serverPlayerData) => {
+    // Update player position with server data
+    console.log('Received player position from server:', serverPlayerData);
+    player.x = serverPlayerData.x;
+    player.y = serverPlayerData.y;
+    player.angle = serverPlayerData.angle;
+    // Update camera to follow the player
+    camera.update(player.x, player.y);
+    // Mark that server position has been received
+    setServerPositionReceived();
   });
 }
 

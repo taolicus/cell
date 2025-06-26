@@ -13,9 +13,12 @@ function handleConnection(io, socket) {
   // Send initial world data
   socket.emit('worldSize', worldManager.getWorldSize());
   socket.emit('entities', worldManager.getEntities());
+  socket.emit('planets', worldManager.getPlanets());
 
-  // Add player to manager
-  playerManager.addPlayer(socket.id);
+  // Add player to manager and get their position
+  const playerData = playerManager.addPlayer(socket.id);
+  socket.emit('playerPosition', playerData);
+
   io.emit('players', playerManager.getAllPlayers());
 
   // Set up event handlers for this socket

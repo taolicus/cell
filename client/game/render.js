@@ -2,6 +2,7 @@
 import { canvas, ctx } from '../utils/canvas.js';
 import { camera } from './camera.js';
 import { player } from './player.js';
+import { WORLD_WIDTH, WORLD_HEIGHT } from './config.js';
 import { entities } from './entities.js';
 import { planets } from './planets.js';
 import { gameState } from './state.js';
@@ -28,16 +29,16 @@ function drawEntity(ctx, entity, fillStyle = "#fff", strokeStyle = "#fff") {
 
 function drawGrid() {
   ctx.strokeStyle = "#444";
-  for (let x = 0; x <= 6000; x += 100) {
+  for (let x = 0; x <= WORLD_WIDTH; x += 100) {
     ctx.beginPath();
     ctx.moveTo(x, 0);
-    ctx.lineTo(x, 6000);
+    ctx.lineTo(x, WORLD_HEIGHT);
     ctx.stroke();
   }
-  for (let y = 0; y <= 6000; y += 100) {
+  for (let y = 0; y <= WORLD_HEIGHT; y += 100) {
     ctx.beginPath();
     ctx.moveTo(0, y);
-    ctx.lineTo(6000, y);
+    ctx.lineTo(WORLD_WIDTH, y);
     ctx.stroke();
   }
 }

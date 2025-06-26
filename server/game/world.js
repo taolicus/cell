@@ -1,6 +1,7 @@
 // World state and entity management
 const { WORLD_WIDTH, WORLD_HEIGHT, NUM_ENTITIES } = require('../config');
 const { createEntity, updateEntities } = require('./entities');
+const { getPlanets } = require('./planets');
 
 class WorldManager {
   constructor() {
@@ -13,6 +14,10 @@ class WorldManager {
 
   getEntities() {
     return [...this.entities];
+  }
+
+  getPlanets() {
+    return getPlanets();
   }
 
   updateEntities(players) {

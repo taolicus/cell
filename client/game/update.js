@@ -2,6 +2,7 @@
 import { gameState } from './state.js';
 import { player } from './player.js';
 import { camera } from './camera.js';
+import { WORLD_WIDTH, WORLD_HEIGHT } from './config.js';
 import { socket, sendMove } from '../network/socket.js';
 import { joystickActive, joystickValue } from '../ui/joystick.js';
 import { otherPlayers, connectionStatus } from '../network/events.js';
@@ -88,15 +89,15 @@ function updatePlayerMovement() {
 function updatePlayerPosition() {
   player.x += player.vx;
   player.y += player.vy;
-  player.x = clamp(player.x, player.radius, 6000 - player.radius);
-  player.y = clamp(player.y, player.radius, 6000 - player.radius);
+  player.x = clamp(player.x, player.radius, WORLD_WIDTH - player.radius);
+  player.y = clamp(player.y, player.radius, WORLD_HEIGHT - player.radius);
 }
 
 function updateCamera() {
   camera.update(player.x, player.y);
   const { width: VIEWPORT_WIDTH, height: VIEWPORT_HEIGHT } = camera.getViewport();
-  camera.x = clamp(camera.x, 0, 6000 - VIEWPORT_WIDTH);
-  camera.y = clamp(camera.y, 0, 6000 - VIEWPORT_HEIGHT);
+  camera.x = clamp(camera.x, 0, WORLD_WIDTH - VIEWPORT_WIDTH);
+  camera.y = clamp(camera.y, 0, WORLD_HEIGHT - VIEWPORT_HEIGHT);
 }
 
 function updateFollowEntity() {

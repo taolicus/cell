@@ -1,7 +1,18 @@
 // Planet logic and travel
-export const planets = [
-  { name: 'Terra', x: 1000, y: 1200, radius: 60, color: '#4af' },
-  { name: 'Vega', x: 5000, y: 800, radius: 50, color: '#fa4' },
-  { name: 'Zyra', x: 3200, y: 5000, radius: 70, color: '#a4f' }
-];
+import { WORLD_WIDTH, WORLD_HEIGHT } from './config.js';
+
+// Planets will be received from server
+export let planets = [];
+
+// Function to update planets when received from server
+export function updatePlanets(serverPlanets) {
+  planets = serverPlanets;
+}
+
+// Function to regenerate planets when world size changes (for backward compatibility)
+export function regeneratePlanets() {
+  // Planets are now managed by server, so this function is deprecated
+  console.log('Planets are now managed by server - regeneratePlanets() is deprecated');
+}
+
 // Additional travel logic and drawing functions to be added here as needed.

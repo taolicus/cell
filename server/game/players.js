@@ -5,13 +5,17 @@ class PlayerManager {
   constructor() {
     this.players = new Map();
     this.lastActivity = new Map();
+    this.persistentPositions = new Map(); // Store positions across sessions
   }
 
   addPlayer(socketId) {
+    // Check if player has a persistent position
+    const persistentPos = this.persistentPositions.get(socketId);
+
     const player = {
-      x: WORLD_WIDTH / 2,
-      y: WORLD_HEIGHT / 2,
-      angle: 0,
+      x: persistentPos ? persistentPos.x : WORLD_WIDTH / 2,
+      y: persistentPos ? persistentPos.y : WORLD_HEIGHT / 2,
+      angle: persistentPos ? persistentPos.angle : 0,
       vx: 0,
       vy: 0,
       radius: 20
@@ -19,9 +23,22 @@ class PlayerManager {
 
     this.players.set(socketId, player);
     this.lastActivity.set(socketId, Date.now());
+
+    // Return the player data so we can send it back to the client
+    return { ...player };
   }
 
   removePlayer(socketId) {
+    // Store the player's position before removing them
+    const player = this.players.get(socketId);
+    if (player) {
+      this.persistentPositions.set(socketId, {
+        x: player.x,
+        y: player.y,
+        angle: player.angle
+      });
+    }
+
     this.players.delete(socketId);
     this.lastActivity.delete(socketId);
   }
@@ -31,6 +48,13 @@ class PlayerManager {
     if (player) {
       Object.assign(player, data);
       this.lastActivity.set(socketId, Date.now());
+
+      // Update persistent position
+      this.persistentPositions.set(socketId, {
+        x: player.x,
+        y: player.y,
+        angle: player.angle
+      });
     }
   }
 

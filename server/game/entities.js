@@ -133,8 +133,8 @@ function updateEntities(entities, players) {
     entity.vy *= entity.friction;
     entity.x += entity.vx;
     entity.y += entity.vy;
-    entity.x = clamp(entity.x, entity.radius, WORLD_WIDTH - entity.x);
-    entity.y = clamp(entity.y, entity.radius, WORLD_HEIGHT - entity.y);
+    entity.x = clamp(entity.x, entity.radius, WORLD_WIDTH - entity.radius);
+    entity.y = clamp(entity.y, entity.radius, WORLD_HEIGHT - entity.radius);
   }
 }
 
