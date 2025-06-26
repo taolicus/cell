@@ -1,6 +1,6 @@
 const http = require('http');
 const app = require('./app');
-const setupSocket = require('./socket');
+const setupSocket = require('./network/socket');
 const { WORLD_WIDTH, WORLD_HEIGHT } = require('./config');
 
 const HOST = process.env.HOST || '0.0.0.0';

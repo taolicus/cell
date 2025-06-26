@@ -1,5 +1,5 @@
 // Player state and movement logic
-import { getViewportSize } from './canvas.js';
+import { camera } from './camera.js';
 
 export let WORLD_WIDTH = 6000;
 export let WORLD_HEIGHT = 6000;
@@ -18,7 +18,5 @@ export const player = {
   rotationSpeed: 0.06
 };
 
-export let camera = {
-  x: player.x - getViewportSize().width / 2,
-  y: player.y - getViewportSize().height / 2
-};
+// Initialize camera position
+camera.update(player.x, player.y);
