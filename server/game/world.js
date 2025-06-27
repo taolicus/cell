@@ -2,12 +2,12 @@
 const { WORLD_WIDTH, WORLD_HEIGHT, NUM_ENTITIES } = require('../config');
 const EntityModule = require('./entities');
 const { getPlanets } = require('./planets');
-const { createInitialResources, updateResources } = require('./resources');
+const ResourceModule = require('./resources');
 
 class WorldManager {
   constructor() {
     this.entities = Array.from({ length: NUM_ENTITIES }, EntityModule.createEntity);
-    this.resources = createInitialResources(50);
+    this.resources = ResourceModule.createInitialResources(50);
   }
 
   getWorldSize() {
@@ -28,7 +28,7 @@ class WorldManager {
 
   updateEntities(players) {
     EntityModule.updateEntities(this.entities, players);
-    updateResources(this.resources, this.entities, players);
+    ResourceModule.updateResources(this.resources, this.entities, players);
   }
 }
 

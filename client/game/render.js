@@ -9,7 +9,7 @@ import { otherPlayers, playerCount, connectionStatus } from '../network/events.j
 import { distance } from './math.js';
 import EntityModule from './entities.js';
 import { drawPlanets, drawPlanetDistances, drawTravelProgress } from './planets.js';
-import { drawResources } from './resources.js';
+import ResourceModule from './resources.js';
 
 function drawGrid() {
   ctx.strokeStyle = "#444";
@@ -104,7 +104,7 @@ export function render() {
   drawGrid();
 
   // Draw resources (under entities)
-  drawResources(ctx);
+  ResourceModule.drawResources(ctx);
 
   // Draw entities
   for (const entity of gameState.getEntities()) {
