@@ -1,34 +1,37 @@
 // Player identification utility
-// This creates a unique identifier for the browser that persists across refreshes
+// This creates a unique identifier for each browser tab that persists across refreshes
 
 function generatePlayerId() {
-  // Try to get existing player ID from localStorage
-  let playerId = localStorage.getItem('playerId');
+  // Generate a browser fingerprint that's consistent across tabs
+  const browserComponents = [
+    navigator.userAgent,
+    navigator.language,
+    screen.width + 'x' + screen.height,
+    screen.colorDepth,
+    new Date().getTimezoneOffset(),
+    navigator.hardwareConcurrency || 'unknown',
+    navigator.deviceMemory || 'unknown',
+    navigator.platform
+  ];
 
-  if (!playerId) {
-    console.log('No existing player ID found, generating new one...');
-    // Generate a new player ID based on browser characteristics
-    const components = [
-      navigator.userAgent,
-      navigator.language,
-      screen.width + 'x' + screen.height,
-      screen.colorDepth,
-      new Date().getTimezoneOffset(),
-      navigator.hardwareConcurrency || 'unknown',
-      navigator.deviceMemory || 'unknown',
-      navigator.platform
-    ];
+  const browserFingerprint = btoa(browserComponents.join('|')).replace(/[^a-zA-Z0-9]/g, '').substring(0, 12);
 
-    // Create a simple hash of the components
-    const combined = components.join('|');
-    playerId = btoa(combined).replace(/[^a-zA-Z0-9]/g, '').substring(0, 16);
+  // Try to get existing session ID for this tab from sessionStorage
+  let sessionId = sessionStorage.getItem('tabSessionId');
 
-    // Store it in localStorage for persistence
-    localStorage.setItem('playerId', playerId);
-    console.log('Generated new player ID:', playerId);
+  if (!sessionId) {
+    console.log('No existing session ID found, generating new one...');
+    // Generate a unique session ID for this tab
+    sessionId = Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
+    sessionStorage.setItem('tabSessionId', sessionId);
+    console.log('Generated new session ID:', sessionId);
   } else {
-    console.log('Using existing player ID:', playerId);
+    console.log('Using existing session ID:', sessionId);
   }
+
+  // Combine browser fingerprint with session ID to create unique player ID per tab
+  const playerId = browserFingerprint + '_' + sessionId;
+  console.log('Generated player ID for this tab:', playerId);
 
   return playerId;
 }
