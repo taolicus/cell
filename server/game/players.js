@@ -20,7 +20,12 @@ class PlayerManager {
       angle: persistentPos ? persistentPos.angle : 0,
       vx: 0,
       vy: 0,
-      radius: 20
+      radius: 20,
+      // Energy system
+      energy: persistentPos ? (persistentPos.energy || 100) : 100,
+      maxEnergy: 100,
+      energyConsumptionRate: 1.5, // energy lost per second while moving
+      isAlive: true
     };
 
     this.players.set(socketId, player);
@@ -48,7 +53,8 @@ class PlayerManager {
       this.persistentPositions.set(fingerprint, {
         x: player.x,
         y: player.y,
-        angle: player.angle
+        angle: player.angle,
+        energy: player.energy
       });
     }
 

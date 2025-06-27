@@ -161,6 +161,37 @@ function drawUI() {
   const coordText = `X: ${player.x.toFixed(0)}  Y: ${player.y.toFixed(0)}`;
   ctx.fillText(coordText, 12, 12);
   ctx.fillText(`Players: ${playerCount}`, 12, 36);
+
+  // Energy display
+  if (player.energy !== undefined) {
+    const energyPercent = Math.round((player.energy / player.maxEnergy) * 100);
+    let energyColor = "#0f0"; // Green when healthy
+    if (energyPercent <= 30) energyColor = "#f00"; // Red when low
+    else if (energyPercent <= 70) energyColor = "#ff0"; // Yellow when moderate
+
+    ctx.fillStyle = energyColor;
+    ctx.fillText(`Energy: ${energyPercent}%`, 12, 60);
+
+    // Energy bar
+    const barWidth = 200;
+    const barHeight = 8;
+    const barX = 12;
+    const barY = 85;
+
+    // Background
+    ctx.fillStyle = "#333";
+    ctx.fillRect(barX, barY, barWidth, barHeight);
+
+    // Energy fill
+    ctx.fillStyle = energyColor;
+    ctx.fillRect(barX, barY, barWidth * (player.energy / player.maxEnergy), barHeight);
+
+    // Border
+    ctx.strokeStyle = "#fff";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(barX, barY, barWidth, barHeight);
+  }
+
   ctx.restore();
 }
 
@@ -184,6 +215,32 @@ function drawConnectionStatus() {
   }
 }
 
+function drawResources() {
+  const resources = gameState.getResources();
+  for (const resource of resources) {
+    ctx.save();
+
+    // Draw nutrient particle with pulsing effect
+    const time = Date.now() * 0.003;
+    const pulse = 0.8 + 0.2 * Math.sin(time + resource.id.charCodeAt(0));
+
+    ctx.globalAlpha = 0.9;
+    ctx.fillStyle = "#4af"; // Blue nutrient particles
+    ctx.beginPath();
+    ctx.arc(resource.x, resource.y, resource.radius * pulse, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Add a subtle glow effect
+    ctx.globalAlpha = 0.3;
+    ctx.fillStyle = "#4af";
+    ctx.beginPath();
+    ctx.arc(resource.x, resource.y, resource.radius * pulse * 1.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+  }
+}
+
 export function render() {
   const { width: VIEWPORT_WIDTH, height: VIEWPORT_HEIGHT } = camera.getViewport();
 
@@ -197,6 +254,9 @@ export function render() {
   // Draw world
   drawGrid();
 
+  // Draw resources (under entities)
+  drawResources();
+
   // Draw entities
   for (const entity of entities) {
     drawEntity(ctx, entity, "#f55", "#fff");
@@ -209,7 +269,7 @@ export function render() {
   }
 
   // Draw player
-  drawEntity(ctx, player, "#0f0", "#fff");
+  drawEntity(ctx, player, "#f00", "#fff");
 
   // Draw planets and distances
   drawPlanets();
@@ -220,6 +280,6 @@ export function render() {
 
   // Draw UI overlays
   drawTravelProgress();
-  // drawUI();
+  drawUI();
   drawConnectionStatus();
 }

@@ -13,6 +13,7 @@ function handleConnection(io, socket) {
   // Send initial world data
   socket.emit('worldSize', worldManager.getWorldSize());
   socket.emit('entities', worldManager.getEntities());
+  socket.emit('resources', worldManager.getResources());
   socket.emit('planets', worldManager.getPlanets());
 
   // Set up event handlers for this socket
@@ -84,6 +85,7 @@ function setupGameLoop(io) {
   setInterval(() => {
     worldManager.updateEntities(playerManager.getAllPlayers());
     io.emit('entities', worldManager.getEntities());
+    io.emit('resources', worldManager.getResources());
   }, 50);
 }
 

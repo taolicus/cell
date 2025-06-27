@@ -34,11 +34,21 @@ The game brings this comic world to life as an interactive multiplayer experienc
 - Dead entities become gray corpses (20% opacity) and remain in the world
 - No respawning - creates survival pressure for future resource systems
 
-### Phase 2: Simple Resource System
-- [ ] Add resource nodes (nutrient particles scattered around world)
-- [ ] Resource consumption (entities gain energy when touching resources)
-- [ ] Resource respawning (new resources spawn periodically)
-- [ ] Resource competition (multiple entities compete for same resources)
+### Phase 2: Simple Resource System ✅ COMPLETE
+- [x] Add resource nodes (nutrient particles scattered around world)
+- [x] Resource consumption (entities gain energy when touching resources)
+- [x] Resource respawning (new resources spawn periodically)
+- [x] Resource competition (multiple entities compete for same resources)
+
+**Current Implementation:**
+- Blue pulsing nutrient particles scattered throughout the world
+- Resources provide 25 energy when consumed by entities or players
+- Resources respawn after 5-10 seconds when consumed
+- Minimum of 30 active resources maintained in the world
+- Visual feedback with pulsing animation and glow effects
+- Players and entities compete for the same resources
+- Energy consumption continues while moving (1.5 energy/second)
+- Players can now see their energy level and percentage in the UI
 
 ### Phase 3: Growth and Division
 - [ ] Growth mechanics (entities grow larger as they gain energy)
@@ -91,8 +101,11 @@ The game brings this comic world to life as an interactive multiplayer experienc
 - **Multiplayer**: Players can join and see each other in real-time
 - **Movement**: WASD or arrow keys to move, mouse to look around
 - **Entities**: AI-controlled bacteria that consume energy while moving
-- **Survival**: Entities die when energy depletes, creating pressure for resource systems
-- **Visual Feedback**: Energy levels shown through color and size changes
+- **Resources**: Blue nutrient particles that provide energy when consumed
+- **Energy System**: Players and entities lose energy while moving, gain energy from resources
+- **Survival**: Entities and players die when energy depletes, creating pressure for resource systems
+- **Visual Feedback**: Energy levels shown through color and size changes, energy UI display
+- **Resource Competition**: Multiple players and entities compete for the same limited resources
 
 ## Next Steps
 - Add more game logic, sync entities, handle disconnects, etc.

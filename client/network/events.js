@@ -40,6 +40,10 @@ export function setupNetworkEvents(socket) {
     entities.push(...serverEntities);
   });
 
+  socket.on('resources', (serverResources) => {
+    gameState.setResources(serverResources);
+  });
+
   socket.on('worldSize', (size) => {
     // Update world size when received from server
     console.log('Received world size from server:', size);

@@ -42,6 +42,21 @@ function updateEntities(entities, players) {
     id: "player:" + id,
   }));
 
+  // Update player energy consumption
+  for (const [playerId, player] of Object.entries(players)) {
+    // Energy consumption based on movement
+    const isMoving = Math.abs(player.vx) > 0.1 || Math.abs(player.vy) > 0.1;
+    if (isMoving) {
+      player.energy -= player.energyConsumptionRate / 60; // Assuming 60 FPS
+    }
+
+    // Death check
+    if (player.energy <= 0) {
+      player.isAlive = false;
+      player.energy = 0;
+    }
+  }
+
   for (let i = 0; i < entities.length; i++) {
     const entity = entities[i];
 

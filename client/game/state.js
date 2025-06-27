@@ -10,6 +10,7 @@ class GameState {
     this.camera = camera;
     this.entities = entities;
     this.planets = planets;
+    this.resources = []; // Add resources array
 
     // Travel state
     this.selectedPlanet = null;
@@ -34,6 +35,15 @@ class GameState {
     this.AUTOPILOT_STRENGTH = 0.04;
     this.ARRIVAL_RADIUS = 40;
     this.ENTITY_FOLLOW_PADDING = 20;
+  }
+
+  // Resource methods
+  setResources(resources) {
+    this.resources = resources;
+  }
+
+  getResources() {
+    return this.resources;
   }
 
   // Travel methods

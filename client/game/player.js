@@ -15,7 +15,12 @@ export const player = {
   maxSpeed: 6,
   acceleration: 0.2,
   friction: 0.98, // liquid drag
-  rotationSpeed: 0.06
+  rotationSpeed: 0.06,
+  // Energy system
+  energy: 100,
+  maxEnergy: 100,
+  energyConsumptionRate: 1.5, // energy lost per second while moving
+  isAlive: true
 };
 
 // Flag to track if server has provided position
