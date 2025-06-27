@@ -13,7 +13,7 @@ const Resources = {
       ctx.globalAlpha = 0.7;
       ctx.beginPath();
       ctx.arc(resource.x, resource.y, resource.radius * pulse, 0, Math.PI * 2);
-      ctx.fillStyle = '#0f0';
+      ctx.fillStyle = '#09f';
       ctx.fill();
       ctx.lineWidth = 2;
       ctx.strokeStyle = '#fff';

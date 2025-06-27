@@ -9,7 +9,7 @@ const Resources = {
       x: Math.random() * WORLD_WIDTH,
       y: Math.random() * WORLD_HEIGHT,
       radius: 8,
-      energyValue: 30,
+      energyValue: 25,
       isActive: true,
       respawnTime: 0,
     };
@@ -39,7 +39,19 @@ const Resources = {
       // Check if any entity is consuming this resource
       for (const entity of entities) {
         if (!entity.isAlive) continue;
+
+        // Validate coordinates before distance calculation
+        if (isNaN(resource.x) || isNaN(resource.y) || isNaN(entity.x) || isNaN(entity.y)) {
+          continue;
+        }
+
         const dist = distance(resource.x, resource.y, entity.x, entity.y);
+
+        // Check for NaN distance
+        if (isNaN(dist)) {
+          continue;
+        }
+
         if (dist < (resource.radius + entity.radius)) {
           // Entity consumes the resource
           entity.energy = Math.min(entity.energy + resource.energyValue, entity.maxEnergy);
@@ -53,7 +65,19 @@ const Resources = {
       for (const playerId in players) {
         const player = players[playerId];
         if (!player.isAlive) continue;
+
+        // Validate coordinates before distance calculation
+        if (isNaN(resource.x) || isNaN(resource.y) || isNaN(player.x) || isNaN(player.y)) {
+          continue;
+        }
+
         const dist = distance(resource.x, resource.y, player.x, player.y);
+
+        // Check for NaN distance
+        if (isNaN(dist)) {
+          continue;
+        }
+
         if (dist < (resource.radius + player.radius)) {
           // Player consumes the resource
           player.energy = Math.min(player.energy + resource.energyValue, player.maxEnergy);

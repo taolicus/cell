@@ -142,6 +142,8 @@ const Entities = {
       } else {
         // Wander as before
         if (entity.changeDirCooldown <= 0) {
+          // Temporarily make entities move toward nearest resource for testing
+          // Find nearest resource (we need to pass resources to this function)
           entity.targetAngle = Math.random() * Math.PI * 2;
           entity.targetSpeed = Math.random() * entity.maxSpeed;
           entity.changeDirCooldown = 30 + Math.random() * 60;
