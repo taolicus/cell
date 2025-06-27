@@ -14,7 +14,7 @@ import {
   magnitude,
   clamp
 } from './math.js';
-import EntityModule from './entities.js';
+import Entities from './entities.js';
 
 // Input state
 const keys = {};

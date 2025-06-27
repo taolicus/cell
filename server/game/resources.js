@@ -2,7 +2,7 @@
 const { WORLD_WIDTH, WORLD_HEIGHT } = require("../config");
 const { distance } = require("../math");
 
-const ResourceModule = {
+const Resources = {
   createResource() {
     return {
       id: Math.random().toString(36).substr(2, 9),
@@ -75,4 +75,4 @@ const ResourceModule = {
   }
 };
 
-module.exports = ResourceModule;
+module.exports = Resources;

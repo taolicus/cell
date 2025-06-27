@@ -1,7 +1,7 @@
 // Resource rendering logic
 import { gameState } from './state.js';
 
-const ResourceModule = {
+const Resources = {
   drawResources(ctx) {
     const resources = gameState.getResources();
     const time = Date.now() / 400;
@@ -27,4 +27,4 @@ const ResourceModule = {
   }
 };
 
-export default ResourceModule;
+export default Resources;

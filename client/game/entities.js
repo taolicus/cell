@@ -3,7 +3,7 @@ import { gameState } from './state.js';
 import { player } from './player.js';
 import { angleTo, normalizeAngle, magnitude } from './math.js';
 
-const EntityModule = {
+const Entities = {
   drawEntity(ctx, entity, fillStyle = "#fff", strokeStyle = "#fff") {
     ctx.save();
     let radius = entity.radius;
@@ -82,4 +82,4 @@ const EntityModule = {
   }
 };
 
-export default EntityModule;
+export default Entities;

@@ -9,7 +9,7 @@ const {
   lerp,
 } = require("../math");
 
-const EntityModule = {
+const Entities = {
   createEntity() {
     return {
       x: Math.random() * WORLD_WIDTH,
@@ -178,4 +178,4 @@ const EntityModule = {
   }
 };
 
-module.exports = EntityModule;
+module.exports = Entities;
