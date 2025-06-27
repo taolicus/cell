@@ -34,9 +34,18 @@ The game brings this comic world to life as an interactive multiplayer experienc
 3. Open your browser at [http://localhost:3000](http://localhost:3000)
    - Open in multiple tabs or devices to test multiplayer.
 
-## Files
-- `server.js`: Node.js + Express + Socket.IO server
-- `index.html`, `main.js`: Client code
+## Project Structure
+- `server/`: Node.js + Express + Socket.IO server
+  - `index.js`: Main server entry point
+  - `app.js`: Express app configuration
+  - `game/`: Game logic and state management
+  - `network/`: Socket.IO event handlers
+- `client/`: Client-side code
+  - `index.html`: Main HTML file
+  - `client.js`: Client entry point
+  - `game/`: Game rendering and logic
+  - `ui/`: User interface components
+  - `network/`: Client-side networking
 
 ## Next Steps
 - Add more game logic, sync entities, handle disconnects, etc.
