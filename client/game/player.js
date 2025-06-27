@@ -1,24 +1,36 @@
 // Player state and movement logic
 import { Camera } from './camera.js';
-import { WORLD_WIDTH, WORLD_HEIGHT, updateWorldSize as updateConfigWorldSize } from './config.js';
+import {
+  WORLD_WIDTH,
+  WORLD_HEIGHT,
+  updateWorldSize as updateConfigWorldSize,
+  PLAYER_RADIUS,
+  PLAYER_MAX_SPEED,
+  PLAYER_ACCELERATION,
+  PLAYER_FRICTION,
+  PLAYER_ROTATION_SPEED,
+  PLAYER_MAX_ENERGY,
+  PLAYER_ENERGY_CONSUMPTION_RATE,
+  JOYSTICK_DEADZONE
+} from './config.js';
 import { magnitude, clamp, normalizeAngle } from './math.js';
 
 const Player = {
   x: 0, // Will be set by server
   y: 0, // Will be set by server
-  radius: 20,
+  radius: PLAYER_RADIUS,
   angle: 0, // Will be set by server
   vx: 0,
   vy: 0,
   speed: 0, // current speed
-  maxSpeed: 6,
-  acceleration: 0.2,
-  friction: 0.98, // liquid drag
-  rotationSpeed: 0.06,
+  maxSpeed: PLAYER_MAX_SPEED,
+  acceleration: PLAYER_ACCELERATION,
+  friction: PLAYER_FRICTION, // liquid drag
+  rotationSpeed: PLAYER_ROTATION_SPEED,
   // Energy system
-  energy: 100,
-  maxEnergy: 100,
-  energyConsumptionRate: 1.5, // energy lost per second while moving
+  energy: PLAYER_MAX_ENERGY,
+  maxEnergy: PLAYER_MAX_ENERGY,
+  energyConsumptionRate: PLAYER_ENERGY_CONSUMPTION_RATE, // energy lost per second while moving
   isAlive: true,
   serverPositionReceived: false,
 
@@ -42,11 +54,11 @@ const Player = {
     // Joystick input
     if (
       joystickActive ||
-      Math.abs(joystickValue.x) > 0.1 ||
-      Math.abs(joystickValue.y) > 0.1
+      Math.abs(joystickValue.x) > JOYSTICK_DEADZONE ||
+      Math.abs(joystickValue.y) > JOYSTICK_DEADZONE
     ) {
       const mag = magnitude(joystickValue.x, joystickValue.y);
-      if (mag > 0.1) {
+      if (mag > JOYSTICK_DEADZONE) {
         const joyAngle = Math.atan2(joystickValue.y, joystickValue.x);
         this.angle = joyAngle;
         this.vx = Math.cos(joyAngle) * this.maxSpeed * mag;

@@ -2,6 +2,14 @@
 import { Player } from './player.js';
 import { Camera } from './camera.js';
 import Planets from './planets.js';
+import {
+  TRAVEL_TURN_DURATION,
+  MOVE_SEND_INTERVAL,
+  AUTOPILOT_STRENGTH,
+  ARRIVAL_RADIUS,
+  ENTITY_FOLLOW_PADDING,
+  TRAVEL_DURATION_PER_UNIT
+} from './config.js';
 
 const State = {
   player: Player,
@@ -17,7 +25,7 @@ const State = {
   travelDuration: 0,
   travelFrom: { x: Player.x, y: Player.y },
   travelTurnStart: 0,
-  travelTurnDuration: 1000,
+  travelTurnDuration: TRAVEL_TURN_DURATION,
   travelInitialAngle: 0,
   travelTargetAngle: 0,
   travelTurning: false,
@@ -27,12 +35,12 @@ const State = {
 
   // Input state
   lastMoveSent: 0,
-  MOVE_SEND_INTERVAL: 50,
+  MOVE_SEND_INTERVAL: MOVE_SEND_INTERVAL,
 
   // Constants
-  AUTOPILOT_STRENGTH: 0.04,
-  ARRIVAL_RADIUS: 40,
-  ENTITY_FOLLOW_PADDING: 20,
+  AUTOPILOT_STRENGTH: AUTOPILOT_STRENGTH,
+  ARRIVAL_RADIUS: ARRIVAL_RADIUS,
+  ENTITY_FOLLOW_PADDING: ENTITY_FOLLOW_PADDING,
 
   // Resource methods
   setResources(resources) {
@@ -68,7 +76,7 @@ const State = {
 
   calculateTravelDuration(planet) {
     const distance = this.calculateDistanceToPlanet(planet);
-    return distance * 50; // 50ms per unit
+    return distance * TRAVEL_DURATION_PER_UNIT;
   },
 
   calculateDistanceToPlanet(planet) {

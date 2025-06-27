@@ -6,9 +6,9 @@ const Planets = {
 
   generatePlanets() {
     const planetData = [
-      { name: 'Terra', radius: 60, color: '#4af' },
-      { name: 'Vega', radius: 50, color: '#fa4' },
-      { name: 'Zyra', radius: 70, color: '#a4f' }
+      // { name: 'Terra', radius: 60, color: '#4af' },
+      // { name: 'Vega', radius: 50, color: '#fa4' },
+      // { name: 'Zyra', radius: 70, color: '#a4f' }
     ];
     return planetData.map(planet => ({
       ...planet,

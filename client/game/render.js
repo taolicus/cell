@@ -2,7 +2,7 @@
 import { canvas, ctx } from '../utils/canvas.js';
 import { Camera } from './camera.js';
 import { Player } from './player.js';
-import { WORLD_WIDTH, WORLD_HEIGHT } from './config.js';
+import { WORLD_WIDTH, WORLD_HEIGHT, ENERGY_BAR_LOW, ENERGY_BAR_HIGH, ENERGY_BAR_ALPHA_LOW, ENERGY_BAR_ALPHA_HIGH } from './config.js';
 import Planets from './planets.js';
 import { State } from './state.js';
 import { otherPlayers, playerCount, connectionStatus } from '../network/events.js';
@@ -40,9 +40,11 @@ function drawUI() {
   if (Player.energy !== undefined) {
     const energyPercent = Math.round((Player.energy / Player.maxEnergy) * 100);
     let energyColor = "#0f0"; // Green when healthy
-    if (energyPercent <= 30) energyColor = "#f00"; // Red when low
-    else if (energyPercent <= 70) energyColor = "#ff0"; // Yellow when moderate
-
+    if (energyPercent <= ENERGY_BAR_LOW) energyColor = "#f00"; // Red when low
+    else if (energyPercent <= ENERGY_BAR_HIGH) energyColor = "#ff0"; // Yellow when medium
+    let alpha = ENERGY_BAR_ALPHA_HIGH;
+    if (energyPercent <= ENERGY_BAR_LOW) alpha = ENERGY_BAR_ALPHA_LOW;
+    ctx.globalAlpha = alpha;
     ctx.fillStyle = energyColor;
     ctx.fillText(`Energy: ${energyPercent}%`, 12, 60);
 
