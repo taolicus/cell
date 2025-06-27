@@ -3,12 +3,11 @@ import { canvas, ctx } from '../utils/canvas.js';
 import { camera } from './camera.js';
 import { player } from './player.js';
 import { WORLD_WIDTH, WORLD_HEIGHT } from './config.js';
-import { planets } from './planets.js';
+import Planets from './planets.js';
 import { gameState } from './state.js';
 import { otherPlayers, playerCount, connectionStatus } from '../network/events.js';
 import { distance } from './math.js';
 import Entities from './entities.js';
-import { drawPlanets, drawPlanetDistances, drawTravelProgress } from './planets.js';
 import Resources from './resources.js';
 
 function drawGrid() {
@@ -121,14 +120,14 @@ export function render() {
   Entities.drawEntity(ctx, player, "#f00", "#fff");
 
   // Draw planets and distances
-  drawPlanets(ctx, planets);
-  drawPlanetDistances(ctx, planets);
+  Planets.drawPlanets(ctx);
+  Planets.drawPlanetDistances(ctx);
 
   // Restore camera transform
   ctx.restore();
 
   // Draw UI overlays
-  drawTravelProgress(ctx, canvas, player);
+  Planets.drawTravelProgress(ctx, canvas, player);
   drawUI();
   drawConnectionStatus();
 }
