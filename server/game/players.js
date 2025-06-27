@@ -1,5 +1,4 @@
 // Player management logic
-const { WORLD_WIDTH, WORLD_HEIGHT } = require('../config');
 const { createPlayer } = require('./player');
 
 class PlayerManager {

@@ -5,8 +5,6 @@ import { Camera } from './camera.js';
 import { WORLD_WIDTH, WORLD_HEIGHT } from './config.js';
 import { socket, sendMove } from '../network/socket.js';
 import { Input } from './input.js';
-import { otherPlayers, connectionStatus } from '../network/events.js';
-import Planets from './planets.js';
 import {
   distance,
   angleTo,
@@ -14,7 +12,6 @@ import {
   magnitude,
   clamp
 } from './math.js';
-import Entities from './entities.js';
 
 Input.setup();
 

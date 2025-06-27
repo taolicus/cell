@@ -1,5 +1,4 @@
 // Planet logic and travel
-import { WORLD_WIDTH, WORLD_HEIGHT } from './config.js';
 import { Player } from './player.js';
 import { distance } from './math.js';
 import { State } from './state.js';

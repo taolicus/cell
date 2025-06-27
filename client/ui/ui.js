@@ -1,6 +1,5 @@
 // UI updates (buttons, overlays, etc.)
 import { State } from '../game/state.js';
-import { Player } from '../game/player.js';
 import Planets from '../game/planets.js';
 import { Camera } from '../game/camera.js';
 import { magnitude } from '../game/math.js';

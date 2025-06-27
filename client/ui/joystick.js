@@ -1,6 +1,6 @@
 // Joystick and input handling
 import { Input } from '../game/input.js';
-import { JOYSTICK_DEADZONE, JOYSTICK_MAX_DIST } from '../game/config.js';
+import { JOYSTICK_MAX_DIST } from '../game/config.js';
 
 const joystick = document.getElementById("joystick");
 const joystickKnob = document.getElementById("joystickKnob");

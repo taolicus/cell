@@ -6,7 +6,6 @@ import { WORLD_WIDTH, WORLD_HEIGHT, ENERGY_BAR_LOW, ENERGY_BAR_HIGH, ENERGY_BAR_
 import Planets from './planets.js';
 import { State } from './state.js';
 import { otherPlayers, playerCount, connectionStatus } from '../network/events.js';
-import { distance } from './math.js';
 import Entities from './entities.js';
 import Resources from './resources.js';
 
