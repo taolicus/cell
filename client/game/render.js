@@ -11,17 +11,50 @@ import { distance } from './math.js';
 
 function drawEntity(ctx, entity, fillStyle = "#fff", strokeStyle = "#fff") {
   ctx.save();
+
+  // Calculate size based on energy level (if entity has energy property)
+  let radius = entity.radius;
+  let alpha = 1.0;
+
+  if (entity.energy !== undefined) {
+    // Scale radius based on energy (0.5x to 1.2x normal size)
+    const energyRatio = entity.energy / entity.maxEnergy;
+    radius = entity.radius * (0.5 + 0.7 * energyRatio);
+
+    // Fade out as energy gets very low
+    if (energyRatio < 0.2) {
+      alpha = 0.3 + 0.7 * (energyRatio / 0.2);
+    }
+
+    // Change color based on energy level
+    if (energyRatio > 0.7) {
+      fillStyle = "#0f0"; // Green when healthy
+    } else if (energyRatio > 0.3) {
+      fillStyle = "#ff0"; // Yellow when moderate
+    } else {
+      fillStyle = "#f00"; // Red when low energy
+    }
+  }
+
+  // Handle dead entities
+  if (entity.isAlive === false) {
+    alpha = 0.2;
+    fillStyle = "#666";
+    strokeStyle = "#444";
+  }
+
+  ctx.globalAlpha = alpha;
   ctx.fillStyle = fillStyle;
   ctx.beginPath();
-  ctx.arc(entity.x, entity.y, entity.radius, 0, Math.PI * 2);
+  ctx.arc(entity.x, entity.y, radius, 0, Math.PI * 2);
   ctx.fill();
   ctx.strokeStyle = strokeStyle;
   ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.moveTo(entity.x, entity.y);
   ctx.lineTo(
-    entity.x + Math.cos(entity.angle) * entity.radius,
-    entity.y + Math.sin(entity.angle) * entity.radius
+    entity.x + Math.cos(entity.angle) * radius,
+    entity.y + Math.sin(entity.angle) * radius
   );
   ctx.stroke();
   ctx.restore();
@@ -187,6 +220,6 @@ export function render() {
 
   // Draw UI overlays
   drawTravelProgress();
-  drawUI();
+  // drawUI();
   drawConnectionStatus();
 }

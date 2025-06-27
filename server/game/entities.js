@@ -27,6 +27,11 @@ function createEntity() {
     changeDirCooldown: 0,
     followTargetId: null, // index of entity or 'player:<socketId>'
     followCooldown: 0,
+    // Energy system
+    energy: 100,
+    maxEnergy: 100,
+    energyConsumptionRate: 1.5, // energy lost per second while moving
+    isAlive: true,
   };
 }
 
@@ -39,6 +44,22 @@ function updateEntities(entities, players) {
 
   for (let i = 0; i < entities.length; i++) {
     const entity = entities[i];
+
+    // Skip dead entities
+    if (!entity.isAlive) continue;
+
+    // Energy consumption based on movement
+    const isMoving = Math.abs(entity.vx) > 0.1 || Math.abs(entity.vy) > 0.1;
+    if (isMoving) {
+      entity.energy -= entity.energyConsumptionRate / 60; // Assuming 60 FPS
+    }
+
+    // Death check
+    if (entity.energy <= 0) {
+      entity.isAlive = false;
+      continue; // Skip further updates for dead entities
+    }
+
     // Handle follow cooldown
     if (entity.followCooldown > 0) {
       entity.followCooldown--;
@@ -63,6 +84,7 @@ function updateEntities(entities, players) {
         for (let j = 0; j < entities.length; j++) {
           if (j === i) continue;
           const e2 = entities[j];
+          if (!e2.isAlive) continue; // Skip dead entities
           const dist = distance(entity.x, entity.y, e2.x, e2.y);
           if (dist < 400 && dist < nearestDist) {
             nearest = j;
@@ -92,7 +114,8 @@ function updateEntities(entities, players) {
         if (players[pid]) target = players[pid];
       } else if (
         typeof entity.followTargetId === "number" &&
-        entities[entity.followTargetId]
+        entities[entity.followTargetId] &&
+        entities[entity.followTargetId].isAlive
       ) {
         target = entities[entity.followTargetId];
       }
