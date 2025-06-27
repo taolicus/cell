@@ -2,8 +2,8 @@
 import { update } from './update.js';
 import { render } from './render.js';
 
-export function gameLoop() {
+export function Loop() {
   update();
   render();
-  requestAnimationFrame(gameLoop);
+  requestAnimationFrame(Loop);
 }

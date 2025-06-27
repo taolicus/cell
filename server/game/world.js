@@ -1,7 +1,7 @@
 // World state and entity management
 const { WORLD_WIDTH, WORLD_HEIGHT, NUM_ENTITIES } = require('../config');
 const Entities = require('./entities');
-const { getPlanets } = require('./planets');
+const Planets = require('./planets');
 const Resources = require('./resources');
 
 class WorldManager {
@@ -23,7 +23,7 @@ class WorldManager {
   }
 
   getPlanets() {
-    return getPlanets();
+    return Planets.getPlanets();
   }
 
   updateEntities(players) {

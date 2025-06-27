@@ -1,15 +1,14 @@
 // Centralized game state management
-import { player } from './player.js';
-import { camera } from './camera.js';
-import { entities } from './entities.js';
-import { planets } from './planets.js';
+import { Player } from './player.js';
+import { Camera } from './camera.js';
+import Planets from './planets.js';
 
-class GameState {
+class State {
   constructor() {
-    this.player = player;
-    this.camera = camera;
-    this.entities = entities;
-    this.planets = planets;
+    this.player = Player;
+    this.camera = Camera;
+    this.entities = [];
+    this.planets = Planets.planets;
     this.resources = []; // Add resources array
 
     // Travel state
@@ -17,7 +16,7 @@ class GameState {
     this._isTraveling = false;
     this.travelStartTime = 0;
     this.travelDuration = 0;
-    this.travelFrom = null;
+    this.travelFrom = { x: this.player.x, y: this.player.y };
     this.travelTurnStart = 0;
     this.travelTurnDuration = 1000;
     this.travelInitialAngle = 0;
@@ -136,4 +135,4 @@ class GameState {
 }
 
 // Create singleton instance
-export const gameState = new GameState();
+export const state = new State();

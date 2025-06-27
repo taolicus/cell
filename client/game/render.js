@@ -1,10 +1,10 @@
 // Game rendering logic
 import { canvas, ctx } from '../utils/canvas.js';
-import { camera } from './camera.js';
-import { player } from './player.js';
+import { Camera } from './camera.js';
+import { Player } from './player.js';
 import { WORLD_WIDTH, WORLD_HEIGHT } from './config.js';
 import Planets from './planets.js';
-import { gameState } from './state.js';
+import { state } from './state.js';
 import { otherPlayers, playerCount, connectionStatus } from '../network/events.js';
 import { distance } from './math.js';
 import Entities from './entities.js';
@@ -32,13 +32,13 @@ function drawUI() {
   ctx.fillStyle = "#fff";
   ctx.textAlign = "left";
   ctx.textBaseline = "top";
-  const coordText = `X: ${player.x.toFixed(0)}  Y: ${player.y.toFixed(0)}`;
+  const coordText = `X: ${Player.x.toFixed(0)}  Y: ${Player.y.toFixed(0)}`;
   ctx.fillText(coordText, 12, 12);
   ctx.fillText(`Players: ${playerCount}`, 12, 36);
 
   // Energy display
-  if (player.energy !== undefined) {
-    const energyPercent = Math.round((player.energy / player.maxEnergy) * 100);
+  if (Player.energy !== undefined) {
+    const energyPercent = Math.round((Player.energy / Player.maxEnergy) * 100);
     let energyColor = "#0f0"; // Green when healthy
     if (energyPercent <= 30) energyColor = "#f00"; // Red when low
     else if (energyPercent <= 70) energyColor = "#ff0"; // Yellow when moderate
@@ -58,7 +58,7 @@ function drawUI() {
 
     // Energy fill
     ctx.fillStyle = energyColor;
-    ctx.fillRect(barX, barY, barWidth * (player.energy / player.maxEnergy), barHeight);
+    ctx.fillRect(barX, barY, barWidth * (Player.energy / Player.maxEnergy), barHeight);
 
     // Border
     ctx.strokeStyle = "#fff";
@@ -90,14 +90,14 @@ function drawConnectionStatus() {
 }
 
 export function render() {
-  const { width: VIEWPORT_WIDTH, height: VIEWPORT_HEIGHT } = camera.getViewport();
+  const { width: VIEWPORT_WIDTH, height: VIEWPORT_HEIGHT } = Camera.getViewport();
 
   // Clear canvas
   ctx.clearRect(0, 0, VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
 
   // Set up camera transform
   ctx.save();
-  ctx.translate(-camera.x, -camera.y);
+  ctx.translate(-Camera.x, -Camera.y);
 
   // Draw world
   drawGrid();
@@ -106,7 +106,7 @@ export function render() {
   Resources.drawResources(ctx);
 
   // Draw entities
-  for (const entity of gameState.getEntities()) {
+  for (const entity of state.getEntities()) {
     Entities.drawEntity(ctx, entity, "#f55", "#fff");
   }
 
@@ -117,7 +117,7 @@ export function render() {
   }
 
   // Draw player
-  Entities.drawEntity(ctx, player, "#f00", "#fff");
+  Entities.drawEntity(ctx, Player, "#f00", "#fff");
 
   // Draw planets and distances
   Planets.drawPlanets(ctx);
@@ -127,7 +127,7 @@ export function render() {
   ctx.restore();
 
   // Draw UI overlays
-  Planets.drawTravelProgress(ctx, canvas, player);
+  Planets.drawTravelProgress(ctx, canvas, Player);
   drawUI();
   drawConnectionStatus();
 }

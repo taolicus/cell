@@ -1,6 +1,6 @@
 // Entity management logic
-import { gameState } from './state.js';
-import { player } from './player.js';
+import { state } from './state.js';
+import { Player } from './player.js';
 import { angleTo, normalizeAngle, magnitude } from './math.js';
 
 const Entities = {
@@ -45,10 +45,10 @@ const Entities = {
   },
 
   updateFollowEntity() {
-    const followIndex = gameState.getFollowEntityIndex();
-    if (followIndex !== null && gameState.getEntities()[followIndex]) {
-      const target = gameState.getEntities()[followIndex];
-      const followDist = target.radius + player.radius + gameState.ENTITY_FOLLOW_PADDING;
+    const followIndex = state.getFollowEntityIndex();
+    if (followIndex !== null && state.getEntities()[followIndex]) {
+      const target = state.getEntities()[followIndex];
+      const followDist = target.radius + player.radius + state.ENTITY_FOLLOW_PADDING;
       const rawAngle = angleTo(player, target);
       const followX = target.x - Math.cos(rawAngle) * followDist;
       const followY = target.y - Math.sin(rawAngle) * followDist;

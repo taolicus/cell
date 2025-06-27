@@ -1,9 +1,8 @@
 // Network event handlers
-import { gameState } from '../game/state.js';
-import { updateWorldSize, setServerPositionReceived } from '../game/player.js';
-import { updatePlanets } from '../game/planets.js';
-import { player } from '../game/player.js';
-import { camera } from '../game/camera.js';
+import { state } from '../game/state.js';
+import { Player } from '../game/player.js';
+import Planets from '../game/planets.js';
+import { Camera } from '../game/camera.js';
 import { generatePlayerId } from '../utils/player-id.js';
 
 export let otherPlayers = {};
@@ -35,41 +34,41 @@ export function setupNetworkEvents(socket) {
   });
 
   socket.on('entities', (serverEntities) => {
-    gameState.entities.length = 0;
-    gameState.entities.push(...serverEntities);
+    state.entities.length = 0;
+    state.entities.push(...serverEntities);
   });
 
   socket.on('resources', (serverResources) => {
-    gameState.setResources(serverResources);
+    state.setResources(serverResources);
   });
 
   socket.on('worldSize', (size) => {
     // Update world size when received from server
     console.log('Received world size from server:', size);
-    updateWorldSize(size.width, size.height);
+    Player.updateWorldSize(size.width, size.height);
   });
 
   socket.on('planets', (serverPlanets) => {
     // Update planets when received from server
     console.log('Received planets from server:', serverPlanets);
-    updatePlanets(serverPlanets);
+    Planets.updatePlanets(serverPlanets);
   });
 
   socket.on('playerPosition', (serverPlayerData) => {
     // Update player position with server data
     console.log('Received player position from server:', serverPlayerData);
-    player.x = serverPlayerData.x;
-    player.y = serverPlayerData.y;
-    player.angle = serverPlayerData.angle;
+    Player.x = serverPlayerData.x;
+    Player.y = serverPlayerData.y;
+    Player.angle = serverPlayerData.angle;
     // Update camera to follow the player
-    camera.update(player.x, player.y);
+    Camera.update(Player.x, Player.y);
     // Mark that server position has been received
-    setServerPositionReceived();
+    Player.setServerPositionReceived();
   });
 }
 
 export function sendMove(socket, playerData) {
-  if (gameState.canSendMove()) {
+  if (state.canSendMove()) {
     socket.emit('move', playerData);
   }
 }
