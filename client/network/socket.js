@@ -1,5 +1,5 @@
 // Socket.io client logic
-import { setupNetworkEvents, sendMove } from './events.js';
+import { setupNetworkEvents, sendMove, updateNetwork } from './events.js';
 
 export let socket;
 
@@ -8,4 +8,4 @@ if (typeof io !== 'undefined') {
   setupNetworkEvents(socket);
 }
 
-export { sendMove };
+export { sendMove, updateNetwork };

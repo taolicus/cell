@@ -80,3 +80,16 @@ export function sendMove(socket, playerData) {
     socket.emit('move', playerData);
   }
 }
+
+export function updateNetwork(socket, player) {
+  if (socket && socket.connected) {
+    sendMove(socket, {
+      x: player.x,
+      y: player.y,
+      angle: player.angle,
+      vx: player.vx,
+      vy: player.vy,
+      radius: player.radius,
+    });
+  }
+}
