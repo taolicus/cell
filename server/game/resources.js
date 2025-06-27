@@ -1,6 +1,6 @@
 // Resource management for nutrient particles
 const { WORLD_WIDTH, WORLD_HEIGHT } = require("../config");
-const { distance } = require("../math");
+const { distance } = require("../utils/math");
 
 const Resources = {
   createResource() {

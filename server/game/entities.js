@@ -7,7 +7,7 @@ const {
   magnitude,
   clamp,
   lerp,
-} = require("../math");
+} = require("../utils/math");
 
 const Entities = {
   createEntity() {
