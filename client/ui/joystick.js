@@ -1,11 +1,8 @@
 // Joystick and input handling
-export const joystick = document.getElementById("joystick");
-export const joystickKnob = document.getElementById("joystick-knob");
-export let joystickActive = false;
-export let joystickCenter = { x: 0, y: 0 };
-export let joystickValue = { x: 0, y: 0 };
+import { Input } from '../game/input.js';
 
-import { magnitude } from "../game/math.js";
+const joystick = document.getElementById("joystick");
+const joystickKnob = document.getElementById("joystickKnob");
 
 export function isTouchDevice() {
   return "ontouchstart" in window || navigator.maxTouchPoints > 0;
@@ -22,14 +19,14 @@ joystick.addEventListener(
   "touchstart",
   function (e) {
     e.preventDefault();
-    joystickActive = true;
+    Input.setJoystickActive(true);
     const rect = joystick.getBoundingClientRect();
     const touch = e.touches[0];
-    joystickCenter = {
+    const joystickCenter = {
       x: rect.left + rect.width / 2,
       y: rect.top + rect.height / 2,
     };
-    updateJoystick(touch.clientX, touch.clientY);
+    updateJoystick(touch.clientX, touch.clientY, joystickCenter);
   },
   { passive: false }
 );
@@ -38,37 +35,38 @@ joystick.addEventListener(
   "touchmove",
   function (e) {
     e.preventDefault();
-    if (!joystickActive) return;
+    const rect = joystick.getBoundingClientRect();
     const touch = e.touches[0];
-    updateJoystick(touch.clientX, touch.clientY);
+    const joystickCenter = {
+      x: rect.left + rect.width / 2,
+      y: rect.top + rect.height / 2,
+    };
+    updateJoystick(touch.clientX, touch.clientY, joystickCenter);
   },
   { passive: false }
 );
 
 joystick.addEventListener(
   "touchend",
-  function (e) {
-    e.preventDefault();
-    joystickActive = false;
-    joystickValue = { x: 0, y: 0 };
+  function () {
+    Input.setJoystickActive(false);
+    Input.setJoystickValue(0, 0);
     joystickKnob.style.left = "40px";
     joystickKnob.style.top = "40px";
   },
   { passive: false }
 );
 
-export function updateJoystick(x, y) {
-  // Calculate relative to center
-  let dx = x - joystickCenter.x;
-  let dy = y - joystickCenter.y;
-  // Clamp to radius 50px
+function updateJoystick(clientX, clientY, joystickCenter) {
+  const dx = clientX - joystickCenter.x;
+  const dy = clientY - joystickCenter.y;
   const maxDist = 50;
-  const dist = magnitude(dx, dy);
-  if (dist > maxDist) {
-    dx = (dx / dist) * maxDist;
-    dy = (dy / dist) * maxDist;
-  }
-  joystickKnob.style.left = 40 + dx + "px";
-  joystickKnob.style.top = 40 + dy + "px";
-  joystickValue = { x: dx / maxDist, y: dy / maxDist };
+  let dist = Math.sqrt(dx * dx + dy * dy);
+  let angle = Math.atan2(dy, dx);
+  if (dist > maxDist) dist = maxDist;
+  const normX = Math.cos(angle) * (dist / maxDist);
+  const normY = Math.sin(angle) * (dist / maxDist);
+  Input.setJoystickValue(normX, normY);
+  joystickKnob.style.left = 40 + normX * maxDist + "px";
+  joystickKnob.style.top = 40 + normY * maxDist + "px";
 }

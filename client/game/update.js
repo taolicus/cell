@@ -4,7 +4,7 @@ import { Player } from './player.js';
 import { Camera } from './camera.js';
 import { WORLD_WIDTH, WORLD_HEIGHT } from './config.js';
 import { socket, sendMove } from '../network/socket.js';
-import { joystickActive, joystickValue } from '../ui/joystick.js';
+import { Input } from './input.js';
 import { otherPlayers, connectionStatus } from '../network/events.js';
 import Planets from './planets.js';
 import {
@@ -16,17 +16,11 @@ import {
 } from './math.js';
 import Entities from './entities.js';
 
-// Input state
-const keys = {};
-window.addEventListener("keydown", (e) => {
-  keys[e.key] = true;
-});
-window.addEventListener("keyup", (e) => {
-  keys[e.key] = false;
-});
+Input.setup();
 
 function isManualInputActive() {
   // Keyboard
+  const keys = Input.keys;
   if (
     keys["ArrowLeft"] ||
     keys["a"] ||
@@ -40,9 +34,9 @@ function isManualInputActive() {
     return true;
   // Joystick
   if (
-    joystickActive ||
-    Math.abs(joystickValue.x) > 0.1 ||
-    Math.abs(joystickValue.y) > 0.1
+    Input.joystickActive ||
+    Math.abs(Input.joystickValue.x) > 0.1 ||
+    Math.abs(Input.joystickValue.y) > 0.1
   )
     return true;
   return false;
@@ -117,7 +111,7 @@ function updateNetwork() {
 
 export function update() {
   updateTravel();
-  Player.updateMovement(keys, joystickActive, joystickValue);
+  Player.updateMovement(Input.keys, Input.joystickActive, Input.joystickValue);
   Player.updatePosition();
   updateCamera();
   updateNetwork();
