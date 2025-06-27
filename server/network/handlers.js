@@ -15,18 +15,28 @@ function handleConnection(io, socket) {
   socket.emit('entities', worldManager.getEntities());
   socket.emit('planets', worldManager.getPlanets());
 
-  // Add player to manager and get their position
-  const playerData = playerManager.addPlayer(socket.id);
-  socket.emit('playerPosition', playerData);
-
-  io.emit('players', playerManager.getAllPlayers());
-
   // Set up event handlers for this socket
   setupSocketHandlers(io, socket);
 }
 
 function setupSocketHandlers(io, socket) {
   const lastMoveTimestamps = {};
+
+  // Handle player join with fingerprint
+  socket.on('join', (data) => {
+    const fingerprint = data.fingerprint || socket.id; // Fallback to socket.id if no fingerprint
+
+    // Check if this fingerprint already has a persistent position
+    const hasPosition = playerManager.hasPersistentPosition(fingerprint);
+    info(`Player joining - Socket: ${socket.id}, Fingerprint: ${fingerprint}, Has persistent position: ${hasPosition}`);
+
+    // Add player to manager and get their position
+    const playerData = playerManager.addPlayer(socket.id, fingerprint);
+    socket.emit('playerPosition', playerData);
+
+    io.emit('players', playerManager.getAllPlayers());
+    info(`Player joined with fingerprint: ${fingerprint}`);
+  });
 
   socket.on('move', (data) => {
     const now = Date.now();

@@ -5,6 +5,7 @@ import { updateWorldSize, setServerPositionReceived } from '../game/player.js';
 import { updatePlanets } from '../game/planets.js';
 import { player } from '../game/player.js';
 import { camera } from '../game/camera.js';
+import { generatePlayerId } from '../utils/player-id.js';
 
 export let otherPlayers = {};
 export let mySocketId = null;
@@ -15,7 +16,10 @@ export function setupNetworkEvents(socket) {
   socket.on('connect', () => {
     mySocketId = socket.id;
     connectionStatus = 'connected';
-    // Don't send initial state - wait for server to provide position
+
+    // Generate player ID and join the game
+    const playerId = generatePlayerId();
+    socket.emit('join', { fingerprint: playerId }); // Keep server-side naming for compatibility
   });
 
   socket.on('disconnect', () => {

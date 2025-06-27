@@ -4,8 +4,8 @@ const cors = require('cors');
 const path = require('path');
 
 const app = express();
-app.use(express.static(path.join(__dirname, '..', 'client')));
 app.use(cors());
+app.use(express.static(path.join(__dirname, '..', 'client')));
 
 // Health check endpoint
 app.get('/health', (req, res) => res.send('OK'));
