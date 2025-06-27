@@ -2,9 +2,9 @@
   "name": "tooth",
   "version": "1.0.0",
   "description": "Multiplayer game concept.",
-  "main": "server/index.js",
+  "main": "server/server.js",
   "scripts": {
-    "start": "nodemon server/index.js"
+    "start": "nodemon server/server.js"
   },
   "dependencies": {
     "express": "^4.18.2",
