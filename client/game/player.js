@@ -1,5 +1,6 @@
 // Player state and movement logic
 import { Camera } from './camera.js';
+import { Input } from './input.js';
 import {
   WORLD_WIDTH,
   WORLD_HEIGHT,
@@ -12,7 +13,7 @@ import {
   PLAYER_ENERGY_CONSUMPTION_RATE,
   JOYSTICK_DEADZONE
 } from '../config.js';
-import { magnitude, clamp, normalizeAngle } from '../utils/math.js';
+import { magnitude, clamp, normalizeAngle, distance, angleTo } from '../utils/math.js';
 
 const Player = {
   x: 0, // Will be set by server
@@ -85,6 +86,77 @@ const Player = {
 
     this.x = clamp(this.x, this.radius, worldWidth - this.radius);
     this.y = clamp(this.y, this.radius, worldHeight - this.radius);
+  },
+
+  updateTravel(travelState) {
+    if (travelState.isTraveling && travelState.selectedPlanet) {
+      const planet = travelState.selectedPlanet;
+
+      if (travelState.travelTurning) {
+        const now = Date.now();
+        const t = Math.min(1, (now - travelState.travelTurnStart) / travelState.travelTurnDuration);
+        let delta = normalizeAngle(travelState.travelTargetAngle - travelState.travelInitialAngle);
+        this.angle = normalizeAngle(travelState.travelInitialAngle + delta * t);
+        if (t === 1) {
+          travelState.travelTurning = false;
+        }
+      } else if (!this.isManualInputActive()) {
+        const dist = distance(this, planet);
+        const angleToPlanet = angleTo(this, planet);
+        const slowRadius = Math.max(
+          travelState.ARRIVAL_RADIUS + planet.radius,
+          planet.radius * 2
+        );
+        let slowFactor = Math.min(1, dist / slowRadius);
+        const autoMaxSpeed = 1.5 + (this.maxSpeed - 1.5) * slowFactor;
+        const autoAccel = 0.05 + (this.acceleration - 0.05) * slowFactor;
+        let delta = normalizeAngle(angleToPlanet - this.angle);
+        if (Math.abs(delta) > this.rotationSpeed) {
+          this.angle += Math.sign(delta) * this.rotationSpeed;
+          this.angle = normalizeAngle(this.angle);
+        } else {
+          this.angle = angleToPlanet;
+        }
+        this.vx += Math.cos(this.angle) * autoAccel;
+        this.vy += Math.sin(this.angle) * autoAccel;
+        const velocity = magnitude(this.vx, this.vy);
+        if (velocity > autoMaxSpeed) {
+          this.vx = (this.vx / velocity) * autoMaxSpeed;
+          this.vy = (this.vy / velocity) * autoMaxSpeed;
+        }
+      }
+
+      const dist = distance(this, planet);
+      if (dist < planet.radius) {
+        this.vx = 0;
+        this.vy = 0;
+        travelState.stopTravel();
+      }
+    }
+  },
+
+  isManualInputActive() {
+    // Keyboard
+    const keys = Input.keys;
+    if (
+      keys["ArrowLeft"] ||
+      keys["a"] ||
+      keys["ArrowRight"] ||
+      keys["d"] ||
+      keys["ArrowUp"] ||
+      keys["w"] ||
+      keys["ArrowDown"] ||
+      keys["s"]
+    )
+      return true;
+    // Joystick
+    if (
+      Input.joystickActive ||
+      Math.abs(Input.joystickValue.x) > 0.1 ||
+      Math.abs(Input.joystickValue.y) > 0.1
+    )
+      return true;
+    return false;
   }
 };
 

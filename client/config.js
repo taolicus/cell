@@ -4,6 +4,12 @@
 export let WORLD_WIDTH;
 export let WORLD_HEIGHT;
 
+// Functions to update world size (to avoid read-only binding issues)
+export function setWorldSize(width, height) {
+  WORLD_WIDTH = width;
+  WORLD_HEIGHT = height;
+}
+
 // Player constants
 export const PLAYER_RADIUS = 20;
 export const PLAYER_MAX_SPEED = 6;
