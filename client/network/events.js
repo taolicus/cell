@@ -1,5 +1,5 @@
 // Network event handlers
-import { state } from '../game/state.js';
+import { State } from '../game/state.js';
 import { Player } from '../game/player.js';
 import Planets from '../game/planets.js';
 import { Camera } from '../game/camera.js';
@@ -34,12 +34,12 @@ export function setupNetworkEvents(socket) {
   });
 
   socket.on('entities', (serverEntities) => {
-    state.entities.length = 0;
-    state.entities.push(...serverEntities);
+    State.entities.length = 0;
+    State.entities.push(...serverEntities);
   });
 
   socket.on('resources', (serverResources) => {
-    state.setResources(serverResources);
+    State.setResources(serverResources);
   });
 
   socket.on('worldSize', (size) => {
@@ -68,7 +68,7 @@ export function setupNetworkEvents(socket) {
 }
 
 export function sendMove(socket, playerData) {
-  if (state.canSendMove()) {
+  if (State.canSendMove()) {
     socket.emit('move', playerData);
   }
 }

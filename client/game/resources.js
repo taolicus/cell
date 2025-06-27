@@ -1,9 +1,9 @@
 // Resource rendering logic
-import { state } from './state.js';
+import { State } from './state.js';
 
 const Resources = {
   drawResources(ctx) {
-    const resources = state.getResources();
+    const resources = State.getResources();
     const time = Date.now() / 400;
     for (const resource of resources) {
       if (!resource.isActive) continue;

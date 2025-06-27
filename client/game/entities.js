@@ -1,5 +1,5 @@
 // Entity management logic
-import { state } from './state.js';
+import { State } from './state.js';
 import { Player } from './player.js';
 import { angleTo, normalizeAngle, magnitude } from './math.js';
 
@@ -45,38 +45,38 @@ const Entities = {
   },
 
   updateFollowEntity() {
-    const followIndex = state.getFollowEntityIndex();
-    if (followIndex !== null && state.getEntities()[followIndex]) {
-      const target = state.getEntities()[followIndex];
-      const followDist = target.radius + player.radius + state.ENTITY_FOLLOW_PADDING;
-      const rawAngle = angleTo(player, target);
+    const followIndex = State.getFollowEntityIndex();
+    if (followIndex !== null && State.getEntities()[followIndex]) {
+      const target = State.getEntities()[followIndex];
+      const followDist = target.radius + Player.radius + State.ENTITY_FOLLOW_PADDING;
+      const rawAngle = angleTo(Player, target);
       const followX = target.x - Math.cos(rawAngle) * followDist;
       const followY = target.y - Math.sin(rawAngle) * followDist;
-      const dx = followX - player.x;
-      const dy = followY - player.y;
+      const dx = followX - Player.x;
+      const dy = followY - Player.y;
       const dist = magnitude(dx, dy);
       const angleToFollow = Math.atan2(dy, dx);
       const slowRadius = Math.max(followDist * 2, target.radius * 2);
       let slowFactor = Math.min(1, dist / slowRadius);
-      const autoMaxSpeed = 1.5 + (player.maxSpeed - 1.5) * slowFactor;
-      const autoAccel = 0.05 + (player.acceleration - 0.05) * slowFactor;
-      let delta = normalizeAngle(angleToFollow - player.angle);
-      if (Math.abs(delta) > player.rotationSpeed) {
-        player.angle += Math.sign(delta) * player.rotationSpeed;
-        player.angle = normalizeAngle(player.angle);
+      const autoMaxSpeed = 1.5 + (Player.maxSpeed - 1.5) * slowFactor;
+      const autoAccel = 0.05 + (Player.acceleration - 0.05) * slowFactor;
+      let delta = normalizeAngle(angleToFollow - Player.angle);
+      if (Math.abs(delta) > Player.rotationSpeed) {
+        Player.angle += Math.sign(delta) * Player.rotationSpeed;
+        Player.angle = normalizeAngle(Player.angle);
       } else {
-        player.angle = angleToFollow;
+        Player.angle = angleToFollow;
       }
-      player.vx += Math.cos(player.angle) * autoAccel;
-      player.vy += Math.sin(player.angle) * autoAccel;
-      const velocity = magnitude(player.vx, player.vy);
+      Player.vx += Math.cos(Player.angle) * autoAccel;
+      Player.vy += Math.sin(Player.angle) * autoAccel;
+      const velocity = magnitude(Player.vx, Player.vy);
       if (velocity > autoMaxSpeed) {
-        player.vx = (player.vx / velocity) * autoMaxSpeed;
-        player.vy = (player.vy / velocity) * autoMaxSpeed;
+        Player.vx = (Player.vx / velocity) * autoMaxSpeed;
+        Player.vy = (Player.vy / velocity) * autoMaxSpeed;
       }
       if (dist < 1) {
-        player.vx = 0;
-        player.vy = 0;
+        Player.vx = 0;
+        Player.vy = 0;
       }
     }
   }

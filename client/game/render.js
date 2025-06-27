@@ -4,7 +4,7 @@ import { Camera } from './camera.js';
 import { Player } from './player.js';
 import { WORLD_WIDTH, WORLD_HEIGHT } from './config.js';
 import Planets from './planets.js';
-import { state } from './state.js';
+import { State } from './state.js';
 import { otherPlayers, playerCount, connectionStatus } from '../network/events.js';
 import { distance } from './math.js';
 import Entities from './entities.js';
@@ -106,7 +106,7 @@ export function render() {
   Resources.drawResources(ctx);
 
   // Draw entities
-  for (const entity of state.getEntities()) {
+  for (const entity of State.getEntities()) {
     Entities.drawEntity(ctx, entity, "#f55", "#fff");
   }
 

@@ -2,7 +2,7 @@
 import { WORLD_WIDTH, WORLD_HEIGHT } from './config.js';
 import { Player } from './player.js';
 import { distance } from './math.js';
-import { state } from './state.js';
+import { State } from './state.js';
 
 const Planets = {
   planets: [],
@@ -61,12 +61,12 @@ const Planets = {
   },
 
   drawTravelProgress(ctx, canvas, Player) {
-    if (state.isTraveling() && state.getSelectedPlanet() && state.travelFrom) {
-      const planet = state.getSelectedPlanet();
+    if (State.isTraveling() && State.getSelectedPlanet() && State.travelFrom) {
+      const planet = State.getSelectedPlanet();
       const distToCenter = distance(Player, planet);
       const distToBorder = Math.max(0, distToCenter - planet.radius);
       const estSeconds = Math.ceil(distToBorder / (Player.maxSpeed / 2));
-      const origDistToCenter = distance(state.travelFrom, planet);
+      const origDistToCenter = distance(State.travelFrom, planet);
       const origDistToBorder = Math.max(0, origDistToCenter - planet.radius);
       const t = 1 - Math.min(1, distToBorder / (origDistToBorder || 1));
       ctx.save();

@@ -1,5 +1,5 @@
 // UI updates (buttons, overlays, etc.)
-import { state } from '../game/state.js';
+import { State } from '../game/state.js';
 import { Player } from '../game/player.js';
 import Planets from '../game/planets.js';
 import { Camera } from '../game/camera.js';
@@ -14,7 +14,7 @@ const Ui = {
     // Clear existing
     Ui.planetTravelBtns.innerHTML = "";
 
-    if (!state.isTraveling()) {
+    if (!State.isTraveling()) {
       Planets.planets.forEach((planet) => {
         const btn = document.createElement("button");
         btn.textContent = `Travel to ${planet.name}`;
@@ -37,8 +37,8 @@ const Ui = {
   },
 
   startTravel(planet) {
-    if (!state.isTraveling()) {
-      state.startTravel(planet);
+    if (!State.isTraveling()) {
+      State.startTravel(planet);
       Ui.stopTravelBtn.style.display = "block";
       Ui.updatePlanetTravelButtons();
     }
@@ -54,10 +54,10 @@ const Ui = {
       // Check planets first
       for (const planet of Planets.planets) {
         if (magnitude(clickX - planet.x, clickY - planet.y) < planet.radius + 10) {
-          if (!state.isTraveling()) {
+          if (!State.isTraveling()) {
             Ui.startTravel(planet);
           }
-          state.stopFollowingEntity();
+          State.stopFollowingEntity();
           Ui.updatePlanetTravelButtons();
           return;
         }
@@ -65,12 +65,12 @@ const Ui = {
 
       // Check entities
       let foundEntity = false;
-      for (let i = 0; i < state.getEntities().length; i++) {
-        const entity = state.getEntities()[i];
+      for (let i = 0; i < State.getEntities().length; i++) {
+        const entity = State.getEntities()[i];
         if (magnitude(clickX - entity.x, clickY - entity.y) < entity.radius + 10) {
-          state.startFollowingEntity(i);
+          State.startFollowingEntity(i);
           foundEntity = true;
-          state.stopTravel();
+          State.stopTravel();
           Ui.stopTravelBtn.style.display = "none";
           Ui.updatePlanetTravelButtons();
           break;
@@ -78,14 +78,14 @@ const Ui = {
       }
 
       if (!foundEntity) {
-        state.stopFollowingEntity(); // click on empty space stops following
+        State.stopFollowingEntity(); // click on empty space stops following
         Ui.updatePlanetTravelButtons();
       }
     });
 
     // Stop travel button handler
     Ui.stopTravelBtn.addEventListener("click", () => {
-      state.stopTravel();
+      State.stopTravel();
       Ui.stopTravelBtn.style.display = "none";
       Ui.updatePlanetTravelButtons();
     });

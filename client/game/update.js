@@ -1,5 +1,5 @@
 // Game update logic
-import { state } from './state.js';
+import { State } from './state.js';
 import { Player } from './player.js';
 import { Camera } from './camera.js';
 import { WORLD_WIDTH, WORLD_HEIGHT } from './config.js';
@@ -49,22 +49,22 @@ function isManualInputActive() {
 }
 
 function updateTravel() {
-  if (state.isTraveling() && state.getSelectedPlanet()) {
-    const planet = state.getSelectedPlanet();
+  if (State.isTraveling() && State.getSelectedPlanet()) {
+    const planet = State.getSelectedPlanet();
 
-    if (state.travelTurning) {
+    if (State.travelTurning) {
       const now = Date.now();
-      const t = Math.min(1, (now - state.travelTurnStart) / state.travelTurnDuration);
-      let delta = normalizeAngle(state.travelTargetAngle - state.travelInitialAngle);
-      Player.angle = normalizeAngle(state.travelInitialAngle + delta * t);
+      const t = Math.min(1, (now - State.travelTurnStart) / State.travelTurnDuration);
+      let delta = normalizeAngle(State.travelTargetAngle - State.travelInitialAngle);
+      Player.angle = normalizeAngle(State.travelInitialAngle + delta * t);
       if (t === 1) {
-        state.travelTurning = false;
+        State.travelTurning = false;
       }
     } else if (!isManualInputActive()) {
       const dist = distance(Player, planet);
       const angleToPlanet = angleTo(Player, planet);
       const slowRadius = Math.max(
-        state.ARRIVAL_RADIUS + planet.radius,
+        State.ARRIVAL_RADIUS + planet.radius,
         planet.radius * 2
       );
       let slowFactor = Math.min(1, dist / slowRadius);
@@ -90,7 +90,7 @@ function updateTravel() {
     if (dist < planet.radius) {
       Player.vx = 0;
       Player.vy = 0;
-      state.stopTravel();
+      State.stopTravel();
     }
   }
 }
