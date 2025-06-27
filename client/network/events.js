@@ -1,6 +1,5 @@
 // Network event handlers
 import { gameState } from '../game/state.js';
-import { entities } from '../game/entities.js';
 import { updateWorldSize, setServerPositionReceived } from '../game/player.js';
 import { updatePlanets } from '../game/planets.js';
 import { player } from '../game/player.js';
@@ -36,8 +35,8 @@ export function setupNetworkEvents(socket) {
   });
 
   socket.on('entities', (serverEntities) => {
-    entities.length = 0;
-    entities.push(...serverEntities);
+    gameState.entities.length = 0;
+    gameState.entities.push(...serverEntities);
   });
 
   socket.on('resources', (serverResources) => {

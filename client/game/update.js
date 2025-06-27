@@ -6,7 +6,6 @@ import { WORLD_WIDTH, WORLD_HEIGHT } from './config.js';
 import { socket, sendMove } from '../network/socket.js';
 import { joystickActive, joystickValue } from '../ui/joystick.js';
 import { otherPlayers, connectionStatus } from '../network/events.js';
-import { entities } from './entities.js';
 import { planets } from './planets.js';
 import {
   distance,
@@ -15,6 +14,7 @@ import {
   magnitude,
   clamp
 } from './math.js';
+import EntityModule from './entities.js';
 
 // Input state
 const keys = {};
@@ -100,43 +100,6 @@ function updateCamera() {
   camera.y = clamp(camera.y, 0, WORLD_HEIGHT - VIEWPORT_HEIGHT);
 }
 
-function updateFollowEntity() {
-  const followIndex = gameState.getFollowEntityIndex();
-  if (followIndex !== null && entities[followIndex]) {
-    const target = entities[followIndex];
-    const followDist = target.radius + player.radius + gameState.ENTITY_FOLLOW_PADDING;
-    const rawAngle = angleTo(player, target);
-    const followX = target.x - Math.cos(rawAngle) * followDist;
-    const followY = target.y - Math.sin(rawAngle) * followDist;
-    const dx = followX - player.x;
-    const dy = followY - player.y;
-    const dist = magnitude(dx, dy);
-    const angleToFollow = Math.atan2(dy, dx);
-    const slowRadius = Math.max(followDist * 2, target.radius * 2);
-    let slowFactor = Math.min(1, dist / slowRadius);
-    const autoMaxSpeed = 1.5 + (player.maxSpeed - 1.5) * slowFactor;
-    const autoAccel = 0.05 + (player.acceleration - 0.05) * slowFactor;
-    let delta = normalizeAngle(angleToFollow - player.angle);
-    if (Math.abs(delta) > player.rotationSpeed) {
-      player.angle += Math.sign(delta) * player.rotationSpeed;
-      player.angle = normalizeAngle(player.angle);
-    } else {
-      player.angle = angleToFollow;
-    }
-    player.vx += Math.cos(player.angle) * autoAccel;
-    player.vy += Math.sin(player.angle) * autoAccel;
-    const velocity = magnitude(player.vx, player.vy);
-    if (velocity > autoMaxSpeed) {
-      player.vx = (player.vx / velocity) * autoMaxSpeed;
-      player.vy = (player.vy / velocity) * autoMaxSpeed;
-    }
-    if (dist < 1) {
-      player.vx = 0;
-      player.vy = 0;
-    }
-  }
-}
-
 function updateTravel() {
   if (gameState.isTraveling() && gameState.getSelectedPlanet()) {
     const planet = gameState.getSelectedPlanet();
@@ -198,7 +161,6 @@ function updateNetwork() {
 }
 
 export function update() {
-  updateFollowEntity();
   updateTravel();
   updatePlayerMovement();
   updatePlayerPosition();

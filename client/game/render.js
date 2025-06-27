@@ -3,62 +3,13 @@ import { canvas, ctx } from '../utils/canvas.js';
 import { camera } from './camera.js';
 import { player } from './player.js';
 import { WORLD_WIDTH, WORLD_HEIGHT } from './config.js';
-import { entities } from './entities.js';
 import { planets } from './planets.js';
 import { gameState } from './state.js';
 import { otherPlayers, playerCount, connectionStatus } from '../network/events.js';
 import { distance } from './math.js';
-
-function drawEntity(ctx, entity, fillStyle = "#fff", strokeStyle = "#fff") {
-  ctx.save();
-
-  // Calculate size based on energy level (if entity has energy property)
-  let radius = entity.radius;
-  let alpha = 1.0;
-
-  if (entity.energy !== undefined) {
-    // Scale radius based on energy (0.5x to 1.2x normal size)
-    const energyRatio = entity.energy / entity.maxEnergy;
-    radius = entity.radius * (0.5 + 0.7 * energyRatio);
-
-    // Fade out as energy gets very low
-    if (energyRatio < 0.2) {
-      alpha = 0.3 + 0.7 * (energyRatio / 0.2);
-    }
-
-    // Change color based on energy level
-    if (energyRatio > 0.7) {
-      fillStyle = "#0f0"; // Green when healthy
-    } else if (energyRatio > 0.3) {
-      fillStyle = "#ff0"; // Yellow when moderate
-    } else {
-      fillStyle = "#f00"; // Red when low energy
-    }
-  }
-
-  // Handle dead entities
-  if (entity.isAlive === false) {
-    alpha = 0.2;
-    fillStyle = "#666";
-    strokeStyle = "#444";
-  }
-
-  ctx.globalAlpha = alpha;
-  ctx.fillStyle = fillStyle;
-  ctx.beginPath();
-  ctx.arc(entity.x, entity.y, radius, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.strokeStyle = strokeStyle;
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(entity.x, entity.y);
-  ctx.lineTo(
-    entity.x + Math.cos(entity.angle) * radius,
-    entity.y + Math.sin(entity.angle) * radius
-  );
-  ctx.stroke();
-  ctx.restore();
-}
+import EntityModule from './entities.js';
+import { drawPlanets, drawPlanetDistances, drawTravelProgress } from './planets.js';
+import { drawResources } from './resources.js';
 
 function drawGrid() {
   ctx.strokeStyle = "#444";
@@ -73,82 +24,6 @@ function drawGrid() {
     ctx.moveTo(0, y);
     ctx.lineTo(WORLD_WIDTH, y);
     ctx.stroke();
-  }
-}
-
-function drawPlanets() {
-  for (const planet of planets) {
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(planet.x, planet.y, planet.radius, 0, Math.PI * 2);
-    ctx.fillStyle = planet.color;
-    ctx.globalAlpha = 0.85;
-    ctx.fill();
-    ctx.globalAlpha = 1.0;
-    ctx.lineWidth = 4;
-    ctx.strokeStyle = "#fff";
-    ctx.stroke();
-    ctx.font = "bold 28px monospace";
-    ctx.fillStyle = "#fff";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "top";
-    ctx.fillText(planet.name, planet.x, planet.y + planet.radius + 8);
-    ctx.restore();
-  }
-}
-
-function drawPlanetDistances() {
-  for (const planet of planets) {
-    ctx.save();
-    ctx.beginPath();
-    ctx.moveTo(player.x, player.y);
-    ctx.lineTo(planet.x, planet.y);
-    ctx.strokeStyle = "#fff6";
-    ctx.lineWidth = 2;
-    ctx.setLineDash([8, 8]);
-    ctx.stroke();
-    ctx.setLineDash([]);
-    const dist = distance(player, planet);
-    const midX = player.x + (planet.x - player.x) * 0.5;
-    const midY = player.y + (planet.y - player.y) * 0.5;
-    ctx.font = "20px monospace";
-    ctx.fillStyle = "#fff";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "bottom";
-    ctx.fillText(`${dist.toFixed(0)} units`, midX, midY - 8);
-    ctx.restore();
-  }
-}
-
-function drawTravelProgress() {
-  if (gameState.isTraveling() && gameState.getSelectedPlanet() && gameState.travelFrom) {
-    const planet = gameState.getSelectedPlanet();
-    const distToCenter = distance(player, planet);
-    const distToBorder = Math.max(0, distToCenter - planet.radius);
-    const estSeconds = Math.ceil(distToBorder / (player.maxSpeed / 2));
-    const origDistToCenter = distance(gameState.travelFrom, planet);
-    const origDistToBorder = Math.max(0, origDistToCenter - planet.radius);
-    const t = 1 - Math.min(1, distToBorder / (origDistToBorder || 1));
-
-    ctx.save();
-    ctx.globalAlpha = 0.85;
-    ctx.fillStyle = "#222";
-    ctx.fillRect(canvas.width / 2 - 180, canvas.height - 60, 360, 40);
-    ctx.globalAlpha = 1.0;
-    ctx.strokeStyle = "#fff";
-    ctx.strokeRect(canvas.width / 2 - 180, canvas.height - 60, 360, 40);
-    ctx.fillStyle = "#4af";
-    ctx.fillRect(canvas.width / 2 - 178, canvas.height - 58, 356 * t, 36);
-    ctx.font = "22px monospace";
-    ctx.fillStyle = "#fff";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(
-      `Traveling to ${planet.name}... ~${estSeconds}s left`,
-      canvas.width / 2,
-      canvas.height - 40
-    );
-    ctx.restore();
   }
 }
 
@@ -215,32 +90,6 @@ function drawConnectionStatus() {
   }
 }
 
-function drawResources() {
-  const resources = gameState.getResources();
-  for (const resource of resources) {
-    ctx.save();
-
-    // Draw nutrient particle with pulsing effect
-    const time = Date.now() * 0.003;
-    const pulse = 0.8 + 0.2 * Math.sin(time + resource.id.charCodeAt(0));
-
-    ctx.globalAlpha = 0.9;
-    ctx.fillStyle = "#4af"; // Blue nutrient particles
-    ctx.beginPath();
-    ctx.arc(resource.x, resource.y, resource.radius * pulse, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Add a subtle glow effect
-    ctx.globalAlpha = 0.3;
-    ctx.fillStyle = "#4af";
-    ctx.beginPath();
-    ctx.arc(resource.x, resource.y, resource.radius * pulse * 1.5, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.restore();
-  }
-}
-
 export function render() {
   const { width: VIEWPORT_WIDTH, height: VIEWPORT_HEIGHT } = camera.getViewport();
 
@@ -255,31 +104,31 @@ export function render() {
   drawGrid();
 
   // Draw resources (under entities)
-  drawResources();
+  drawResources(ctx);
 
   // Draw entities
-  for (const entity of entities) {
-    drawEntity(ctx, entity, "#f55", "#fff");
+  for (const entity of gameState.getEntities()) {
+    EntityModule.drawEntity(ctx, entity, "#f55", "#fff");
   }
 
   // Draw other players
   for (const id in otherPlayers) {
     const p = otherPlayers[id];
-    drawEntity(ctx, p, "#09f", "#fff");
+    EntityModule.drawEntity(ctx, p, "#09f", "#fff");
   }
 
   // Draw player
-  drawEntity(ctx, player, "#f00", "#fff");
+  EntityModule.drawEntity(ctx, player, "#f00", "#fff");
 
   // Draw planets and distances
-  drawPlanets();
-  drawPlanetDistances();
+  drawPlanets(ctx, planets);
+  drawPlanetDistances(ctx, planets);
 
   // Restore camera transform
   ctx.restore();
 
   // Draw UI overlays
-  drawTravelProgress();
+  drawTravelProgress(ctx, canvas, player);
   drawUI();
   drawConnectionStatus();
 }
