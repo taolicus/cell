@@ -1,39 +1,37 @@
 // Camera management
 import { getViewportSize } from '../utils/canvas.js';
 
-export class Camera {
-  constructor() {
-    this.x = 0;
-    this.y = 0;
-    this.viewport = getViewportSize();
-  }
+const camera = {
+  x: 0,
+  y: 0,
+  viewport: getViewportSize(),
 
   update(playerX, playerY) {
-    this.x = playerX - this.viewport.width / 2;
-    this.y = playerY - this.viewport.height / 2;
-  }
+    camera.x = playerX - camera.viewport.width / 2;
+    camera.y = playerY - camera.viewport.height / 2;
+  },
 
   getViewport() {
-    return this.viewport;
-  }
+    return camera.viewport;
+  },
 
   getPosition() {
-    return { x: this.x, y: this.y };
-  }
+    return { x: camera.x, y: camera.y };
+  },
 
   worldToScreen(worldX, worldY) {
     return {
-      x: worldX - this.x,
-      y: worldY - this.y
+      x: worldX - camera.x,
+      y: worldY - camera.y
     };
-  }
+  },
 
   screenToWorld(screenX, screenY) {
     return {
-      x: screenX + this.x,
-      y: screenY + this.y
+      x: screenX + camera.x,
+      y: screenY + camera.y
     };
   }
-}
+};
 
-export const camera = new Camera();
+export { camera };
