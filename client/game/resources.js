@@ -1,6 +1,6 @@
 // Resource rendering logic
 import { State } from './state.js';
-import { RESOURCE_PULSE_MIN, RESOURCE_PULSE_MAX, RESOURCE_PULSE_SPEED } from './config.js';
+import { RESOURCE_PULSE_MIN, RESOURCE_PULSE_MAX, RESOURCE_PULSE_SPEED } from '../config.js';
 
 const Resources = {
   drawResources(ctx) {

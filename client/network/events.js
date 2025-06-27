@@ -4,6 +4,7 @@ import { Player } from '../game/player.js';
 import Planets from '../game/planets.js';
 import { Camera } from '../game/camera.js';
 import { generatePlayerId } from '../utils/player-id.js';
+import { WORLD_WIDTH, WORLD_HEIGHT } from '../config.js';
 
 export let otherPlayers = {};
 export let mySocketId = null;
@@ -45,7 +46,15 @@ export function setupNetworkEvents(socket) {
   socket.on('worldSize', (size) => {
     // Update world size when received from server
     console.log('Received world size from server:', size);
-    Player.updateWorldSize(size.width, size.height);
+    WORLD_WIDTH = size.width;
+    WORLD_HEIGHT = size.height;
+
+    // Only move player to center if server hasn't provided a position yet
+    if (!Player.serverPositionReceived && Player.x === 0 && Player.y === 0) {
+      Player.x = WORLD_WIDTH / 2;
+      Player.y = WORLD_HEIGHT / 2;
+      Camera.update(Player.x, Player.y);
+    }
   });
 
   socket.on('planets', (serverPlanets) => {

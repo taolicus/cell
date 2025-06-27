@@ -2,7 +2,7 @@
 import { canvas, ctx } from '../utils/canvas.js';
 import { Camera } from './camera.js';
 import { Player } from './player.js';
-import { WORLD_WIDTH, WORLD_HEIGHT, ENERGY_BAR_LOW, ENERGY_BAR_HIGH, ENERGY_BAR_ALPHA_LOW, ENERGY_BAR_ALPHA_HIGH } from './config.js';
+import { WORLD_WIDTH, WORLD_HEIGHT, ENERGY_BAR_LOW, ENERGY_BAR_HIGH, ENERGY_BAR_ALPHA_LOW, ENERGY_BAR_ALPHA_HIGH } from '../config.js';
 import Planets from './planets.js';
 import { State } from './state.js';
 import { otherPlayers, playerCount, connectionStatus } from '../network/events.js';
@@ -10,17 +10,21 @@ import Entities from './entities.js';
 import Resources from './resources.js';
 
 function drawGrid() {
+  // Use server defaults as fallback if world dimensions not yet received
+  const worldWidth = WORLD_WIDTH || 1000;
+  const worldHeight = WORLD_HEIGHT || 800;
+
   ctx.strokeStyle = "#444";
-  for (let x = 0; x <= WORLD_WIDTH; x += 100) {
+  for (let x = 0; x <= worldWidth; x += 100) {
     ctx.beginPath();
     ctx.moveTo(x, 0);
-    ctx.lineTo(x, WORLD_HEIGHT);
+    ctx.lineTo(x, worldHeight);
     ctx.stroke();
   }
-  for (let y = 0; y <= WORLD_HEIGHT; y += 100) {
+  for (let y = 0; y <= worldHeight; y += 100) {
     ctx.beginPath();
     ctx.moveTo(0, y);
-    ctx.lineTo(WORLD_WIDTH, y);
+    ctx.lineTo(worldWidth, y);
     ctx.stroke();
   }
 }

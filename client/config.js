@@ -1,12 +1,8 @@
 // Unified game configuration and constants
 
-export let WORLD_WIDTH = 1000; // Default, will be updated by server
-export let WORLD_HEIGHT = 1000; // Default, will be updated by server
-
-export function updateWorldSize(width, height) {
-  WORLD_WIDTH = width;
-  WORLD_HEIGHT = height;
-}
+// World size will be set by server - no client defaults needed
+export let WORLD_WIDTH;
+export let WORLD_HEIGHT;
 
 // Player constants
 export const PLAYER_RADIUS = 20;

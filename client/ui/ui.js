@@ -2,7 +2,7 @@
 import { State } from '../game/state.js';
 import Planets from '../game/planets.js';
 import { Camera } from '../game/camera.js';
-import { magnitude } from '../game/math.js';
+import { magnitude } from '../utils/math.js';
 import { canvas } from '../utils/canvas.js';
 
 const Ui = {

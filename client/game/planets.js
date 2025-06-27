@@ -1,6 +1,6 @@
 // Planet logic and travel
 import { Player } from './player.js';
-import { distance } from './math.js';
+import { distance } from '../utils/math.js';
 import { State } from './state.js';
 
 const Planets = {

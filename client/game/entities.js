@@ -1,7 +1,7 @@
 // Entity management logic
 import { State } from './state.js';
 import { Player } from './player.js';
-import { angleTo, normalizeAngle, magnitude } from './math.js';
+import { angleTo, normalizeAngle, magnitude } from '../utils/math.js';
 
 const Entities = {
   drawEntity(ctx, entity, fillStyle = "#fff", strokeStyle = "#fff") {

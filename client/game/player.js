@@ -3,7 +3,6 @@ import { Camera } from './camera.js';
 import {
   WORLD_WIDTH,
   WORLD_HEIGHT,
-  updateWorldSize as updateConfigWorldSize,
   PLAYER_RADIUS,
   PLAYER_MAX_SPEED,
   PLAYER_ACCELERATION,
@@ -12,8 +11,8 @@ import {
   PLAYER_MAX_ENERGY,
   PLAYER_ENERGY_CONSUMPTION_RATE,
   JOYSTICK_DEADZONE
-} from './config.js';
-import { magnitude, clamp, normalizeAngle } from './math.js';
+} from '../config.js';
+import { magnitude, clamp, normalizeAngle } from '../utils/math.js';
 
 const Player = {
   x: 0, // Will be set by server
@@ -33,18 +32,6 @@ const Player = {
   energyConsumptionRate: PLAYER_ENERGY_CONSUMPTION_RATE, // energy lost per second while moving
   isAlive: true,
   serverPositionReceived: false,
-
-  updateWorldSize(width, height) {
-    console.log('Updating world size from', WORLD_WIDTH, 'x', WORLD_HEIGHT, 'to', width, 'x', height);
-    updateConfigWorldSize(width, height);
-    // Only move to center if server hasn't provided a position yet
-    if (!this.serverPositionReceived && this.x === 0 && this.y === 0) {
-      this.x = WORLD_WIDTH / 2;
-      this.y = WORLD_HEIGHT / 2;
-      Camera.update(this.x, this.y);
-    }
-    console.log('World size updated successfully');
-  },
 
   setServerPositionReceived() {
     this.serverPositionReceived = true;
@@ -91,8 +78,13 @@ const Player = {
   updatePosition() {
     this.x += this.vx;
     this.y += this.vy;
-    this.x = clamp(this.x, this.radius, WORLD_WIDTH - this.radius);
-    this.y = clamp(this.y, this.radius, WORLD_HEIGHT - this.radius);
+
+    // Use server defaults as fallback if world dimensions not yet received
+    const worldWidth = WORLD_WIDTH || 1000;
+    const worldHeight = WORLD_HEIGHT || 800;
+
+    this.x = clamp(this.x, this.radius, worldWidth - this.radius);
+    this.y = clamp(this.y, this.radius, worldHeight - this.radius);
   }
 };
 

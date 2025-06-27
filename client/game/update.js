@@ -2,7 +2,7 @@
 import { State } from './state.js';
 import { Player } from './player.js';
 import { Camera } from './camera.js';
-import { WORLD_WIDTH, WORLD_HEIGHT } from './config.js';
+import { WORLD_WIDTH, WORLD_HEIGHT } from '../config.js';
 import { socket, sendMove } from '../network/socket.js';
 import { Input } from './input.js';
 import {
@@ -11,7 +11,7 @@ import {
   normalizeAngle,
   magnitude,
   clamp
-} from './math.js';
+} from '../utils/math.js';
 
 Input.setup();
 
@@ -89,8 +89,13 @@ function updateTravel() {
 function updateCamera() {
   Camera.update(Player.x, Player.y);
   const { width: VIEWPORT_WIDTH, height: VIEWPORT_HEIGHT } = Camera.getViewport();
-  Camera.x = clamp(Camera.x, 0, WORLD_WIDTH - VIEWPORT_WIDTH);
-  Camera.y = clamp(Camera.y, 0, WORLD_HEIGHT - VIEWPORT_HEIGHT);
+
+  // Use server defaults as fallback if world dimensions not yet received
+  const worldWidth = WORLD_WIDTH || 1000;
+  const worldHeight = WORLD_HEIGHT || 800;
+
+  Camera.x = clamp(Camera.x, 0, worldWidth - VIEWPORT_WIDTH);
+  Camera.y = clamp(Camera.y, 0, worldHeight - VIEWPORT_HEIGHT);
 }
 
 function updateNetwork() {

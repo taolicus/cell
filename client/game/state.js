@@ -9,7 +9,7 @@ import {
   ARRIVAL_RADIUS,
   ENTITY_FOLLOW_PADDING,
   TRAVEL_DURATION_PER_UNIT
-} from './config.js';
+} from '../config.js';
 
 const State = {
   player: Player,
