@@ -1,5 +1,6 @@
 // Player management logic
 const { WORLD_WIDTH, WORLD_HEIGHT } = require('../config');
+const { createPlayer } = require('./player');
 
 class PlayerManager {
   constructor() {
@@ -13,21 +14,7 @@ class PlayerManager {
   addPlayer(socketId, fingerprint) {
     // Check if player has a persistent position using fingerprint
     const persistentPos = this.persistentPositions.get(fingerprint);
-
-    const player = {
-      x: persistentPos ? persistentPos.x : WORLD_WIDTH / 2,
-      y: persistentPos ? persistentPos.y : WORLD_HEIGHT / 2,
-      angle: persistentPos ? persistentPos.angle : 0,
-      vx: 0,
-      vy: 0,
-      radius: 20,
-      // Energy system
-      energy: persistentPos ? (persistentPos.energy || 100) : 100,
-      maxEnergy: 100,
-      energyConsumptionRate: 1.5, // energy lost per second while moving
-      isAlive: true
-    };
-
+    const player = createPlayer(persistentPos);
     this.players.set(socketId, player);
     this.lastActivity.set(socketId, Date.now());
     this.socketToFingerprint.set(socketId, fingerprint);
