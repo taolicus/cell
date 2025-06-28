@@ -2,7 +2,7 @@
 import { canvas, ctx } from '../utils/canvas.js';
 import { Camera } from './camera.js';
 import { Player } from './player.js';
-import { WORLD_WIDTH, WORLD_HEIGHT, ENERGY_BAR_LOW, ENERGY_BAR_HIGH, ENERGY_BAR_ALPHA_LOW, ENERGY_BAR_ALPHA_HIGH } from '../config.js';
+import { WORLD_WIDTH, WORLD_HEIGHT, ENERGY_BAR_LOW, ENERGY_BAR_HIGH, ENERGY_BAR_ALPHA_LOW, ENERGY_BAR_ALPHA_HIGH, worldSizeReceived } from '../config.js';
 import Planets from './planets.js';
 import { State } from './state.js';
 import { otherPlayers, playerCount, connectionStatus } from '../network/events.js';
@@ -11,10 +11,40 @@ import Resources from './resources.js';
 
 const showEnergy = false;
 
+function drawLoadingScreen() {
+  ctx.save();
+  ctx.globalAlpha = 0.9;
+  ctx.fillStyle = "#222";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.globalAlpha = 1.0;
+  ctx.fillStyle = "#fff";
+  ctx.font = "24px monospace";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+
+  let mainText = "Loading world...";
+  let subText = "Waiting for server data";
+
+  if (connectionStatus === "connecting") {
+    mainText = "Connecting to server...";
+    subText = "Establishing connection";
+  } else if (connectionStatus === "disconnected") {
+    mainText = "Connection lost";
+    subText = "Attempting to reconnect...";
+  }
+
+  ctx.fillText(mainText, canvas.width / 2, canvas.height / 2);
+  ctx.font = "16px monospace";
+  ctx.fillText(subText, canvas.width / 2, canvas.height / 2 + 40);
+  ctx.restore();
+}
+
 function drawGrid() {
-  // Use server defaults as fallback if world dimensions not yet received
-  const worldWidth = WORLD_WIDTH || 1000;
-  const worldHeight = WORLD_HEIGHT || 800;
+  // Only draw grid if world size has been received from server
+  if (!worldSizeReceived) return;
+
+  const worldWidth = WORLD_WIDTH;
+  const worldHeight = WORLD_HEIGHT;
 
   ctx.strokeStyle = "#444";
   for (let x = 0; x <= worldWidth; x += 100) {
@@ -101,6 +131,12 @@ export function render() {
 
   // Clear canvas
   ctx.clearRect(0, 0, VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
+
+  // Show loading screen if world size hasn't been received yet
+  if (!worldSizeReceived) {
+    drawLoadingScreen();
+    return;
+  }
 
   // Set up camera transform
   ctx.save();

@@ -11,7 +11,8 @@ import {
   PLAYER_ROTATION_SPEED,
   PLAYER_MAX_ENERGY,
   PLAYER_ENERGY_CONSUMPTION_RATE,
-  JOYSTICK_DEADZONE
+  JOYSTICK_DEADZONE,
+  worldSizeReceived
 } from '../config.js';
 import { magnitude, clamp, normalizeAngle, distance, angleTo } from '../utils/math.js';
 
@@ -80,12 +81,11 @@ const Player = {
     this.x += this.vx;
     this.y += this.vy;
 
-    // Use server defaults as fallback if world dimensions not yet received
-    const worldWidth = WORLD_WIDTH || 1000;
-    const worldHeight = WORLD_HEIGHT || 800;
-
-    this.x = clamp(this.x, this.radius, worldWidth - this.radius);
-    this.y = clamp(this.y, this.radius, worldHeight - this.radius);
+    // Only apply world boundaries if world size has been received from server
+    if (worldSizeReceived) {
+      this.x = clamp(this.x, this.radius, WORLD_WIDTH - this.radius);
+      this.y = clamp(this.y, this.radius, WORLD_HEIGHT - this.radius);
+    }
   },
 
   updateTravel(travelState) {

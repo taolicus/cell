@@ -1,7 +1,7 @@
 // Camera management
 import { getViewportSize } from '../utils/canvas.js';
 import { clamp } from '../utils/math.js';
-import { WORLD_WIDTH, WORLD_HEIGHT } from '../config.js';
+import { WORLD_WIDTH, WORLD_HEIGHT, worldSizeReceived } from '../config.js';
 
 const Camera = {
   x: 0,
@@ -12,12 +12,11 @@ const Camera = {
     Camera.x = playerX - Camera.viewport.width / 2;
     Camera.y = playerY - Camera.viewport.height / 2;
 
-    // Clamp camera to world boundaries
-    const worldWidth = WORLD_WIDTH || 1000;
-    const worldHeight = WORLD_HEIGHT || 800;
-
-    Camera.x = clamp(Camera.x, 0, worldWidth - Camera.viewport.width);
-    Camera.y = clamp(Camera.y, 0, worldHeight - Camera.viewport.height);
+    // Only clamp camera to world boundaries if world size has been received from server
+    if (worldSizeReceived) {
+      Camera.x = clamp(Camera.x, 0, WORLD_WIDTH - Camera.viewport.width);
+      Camera.y = clamp(Camera.y, 0, WORLD_HEIGHT - Camera.viewport.height);
+    }
   },
 
   getViewport() {

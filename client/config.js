@@ -3,11 +3,13 @@
 // World size will be set by server - no client defaults needed
 export let WORLD_WIDTH;
 export let WORLD_HEIGHT;
+export let worldSizeReceived = false;
 
 // Functions to update world size (to avoid read-only binding issues)
 export function setWorldSize(width, height) {
   WORLD_WIDTH = width;
   WORLD_HEIGHT = height;
+  worldSizeReceived = true;
 }
 
 // Player constants
