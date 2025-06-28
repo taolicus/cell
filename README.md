@@ -48,13 +48,32 @@ The game brings this comic world to life as an interactive multiplayer experienc
 - Visual feedback with pulsing animation and glow effects
 - Players and entities compete for the same resources
 - Energy consumption continues while moving (1.5 energy/second)
-- Players can now see their energy level and percentage in the UI
 
-### Phase 3: Growth and Division
-- [ ] Growth mechanics (entities grow larger as they gain energy)
-- [ ] Division threshold (max energy + size triggers division)
-- [ ] Division process (split into two smaller entities with half energy each)
-- [ ] Division cooldown (prevent rapid division spam)
+### Phase 3: Growth and Division ✅ COMPLETE
+- [x] Growth mechanics (entities grow larger as they gain energy)
+- [x] Division threshold (max energy + size triggers division)
+- [x] Division process (split into two smaller entities with half energy each)
+- [x] Division cooldown (prevent rapid division spam)
+
+**Current Implementation:**
+- **Growth System**: Entities grow when energy is above 50% of max energy
+  - Growth rate: 0.1 radius units per energy point above 50%
+  - Base radius: 18 units, can grow significantly larger
+  - Shrinking: Entities shrink when energy drops below 50%
+- **Division System**: Entities divide when they reach a combined energy + size threshold
+  - Division threshold: 150 points (energy + (radius - baseRadius) * 10)
+  - Division cooldown: 10 seconds between divisions
+  - Division process: Creates offspring with 40% of parent's energy and 70% of parent's size
+  - Parent retains 40% energy and 70% size after division
+  - Offspring have slightly lower division thresholds (90% of parent's threshold)
+- **Visual Indicators**:
+  - Entities ready to divide show pulsing magenta rings
+  - Generation counter displayed below divided entities (G1, G2, etc.)
+  - Size directly reflects growth state
+- **Population Dynamics**:
+  - Successful entities can create exponential growth
+  - Resource competition limits population growth
+  - Generational decay in division thresholds prevents infinite growth
 
 ### Phase 4: Basic Health System
 - [ ] Health property (separate from energy, represents structural integrity)
@@ -106,6 +125,8 @@ The game brings this comic world to life as an interactive multiplayer experienc
 - **Survival**: Entities and players die when energy depletes, creating pressure for resource systems
 - **Visual Feedback**: Energy levels shown through color and size changes, energy UI display
 - **Resource Competition**: Multiple players and entities compete for the same limited resources
+- **Growth & Division**: Entities grow when well-fed and can divide to create offspring
+- **Population Dynamics**: Successful bacteria can create exponential growth, limited by resource competition
 
 ## Next Steps
 - Add more game logic, sync entities, handle disconnects, etc.

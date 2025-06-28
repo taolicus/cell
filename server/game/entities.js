@@ -33,6 +33,13 @@ const Entities = {
       maxEnergy: 100,
       energyConsumptionRate: 1.5, // energy lost per second while moving
       isAlive: true,
+      // Growth and division system
+      growthRate: 0.1, // growth per energy point above 50%
+      baseRadius: 18, // base radius before growth
+      divisionThreshold: 150, // energy + size threshold for division
+      divisionCooldown: 0, // frames until can divide again
+      divisionCooldownTime: 600, // 10 seconds at 60 FPS
+      generation: 0, // track generations for division
     };
   },
 
@@ -74,6 +81,46 @@ const Entities = {
       if (entity.energy <= 0) {
         entity.isAlive = false;
         continue; // Skip further updates for dead entities
+      }
+
+      // Growth mechanics
+      const energyRatio = entity.energy / entity.maxEnergy;
+      if (energyRatio > 0.5) {
+        // Grow when energy is above 50%
+        const excessEnergy = entity.energy - (entity.maxEnergy * 0.5);
+        const growth = excessEnergy * entity.growthRate;
+        entity.radius = entity.baseRadius + growth;
+      } else {
+        // Shrink when energy is low
+        entity.radius = Math.max(entity.baseRadius * 0.5, entity.radius - 0.1);
+      }
+
+      // Division mechanics
+      if (entity.divisionCooldown > 0) {
+        entity.divisionCooldown--;
+      }
+
+      // Check division threshold (energy + size)
+      const divisionValue = entity.energy + (entity.radius - entity.baseRadius) * 10;
+      if (divisionValue >= entity.divisionThreshold && entity.divisionCooldown <= 0) {
+        // Perform division
+        const newEntity = this.createEntity();
+        newEntity.x = entity.x + (Math.random() - 0.5) * 40; // Offset from parent
+        newEntity.y = entity.y + (Math.random() - 0.5) * 40;
+        newEntity.energy = entity.energy * 0.4; // 40% of parent's energy
+        newEntity.radius = entity.radius * 0.7; // 70% of parent's size
+        newEntity.baseRadius = entity.baseRadius * 0.7;
+        newEntity.generation = entity.generation + 1;
+        newEntity.divisionThreshold = entity.divisionThreshold * 0.9; // Slightly lower threshold for offspring
+        newEntity.divisionCooldown = entity.divisionCooldownTime;
+
+        // Parent loses energy and size
+        entity.energy *= 0.4; // 40% of original energy
+        entity.radius *= 0.7; // 70% of original size
+        entity.divisionCooldown = entity.divisionCooldownTime;
+
+        // Add new entity to the array
+        entities.push(newEntity);
       }
 
       // Handle follow cooldown

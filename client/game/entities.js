@@ -3,14 +3,21 @@ import { State } from './state.js';
 import { Player } from './player.js';
 import { angleTo, normalizeAngle, magnitude } from '../utils/math.js';
 
+const showGen = false
+
 const Entities = {
   drawEntity(ctx, entity, fillStyle = "#fff", strokeStyle = "#fff") {
     ctx.save();
     let radius = entity.radius;
     let alpha = 1.0;
+
+    // Energy-based color and size changes
     if (entity.energy !== undefined) {
       const energyRatio = entity.energy / entity.maxEnergy;
-      radius = entity.radius * (0.5 + 0.7 * energyRatio);
+
+      // Size based on current radius (which includes growth)
+      radius = entity.radius;
+
       if (energyRatio < 0.2) {
         alpha = 0.3 + 0.7 * (energyRatio / 0.2);
       }
@@ -22,11 +29,36 @@ const Entities = {
         fillStyle = "#f00";
       }
     }
+
+    // Dead entity styling
     if (entity.isAlive === false) {
       alpha = 0.2;
       fillStyle = "#666";
       strokeStyle = "#444";
     }
+
+    // Division readiness indicator
+    if (entity.isAlive && entity.energy !== undefined) {
+      const energyRatio = entity.energy / entity.maxEnergy;
+      const divisionValue = entity.energy + (entity.radius - (entity.baseRadius || 18)) * 10;
+      const divisionThreshold = entity.divisionThreshold || 150;
+
+      if (divisionValue >= divisionThreshold && entity.divisionCooldown <= 0) {
+        // Entity is ready to divide - add pulsing effect
+        const pulse = Math.sin(Date.now() * 0.01) * 0.2 + 0.8;
+        alpha *= pulse;
+
+        // Add division indicator ring
+        ctx.strokeStyle = "#ff00ff";
+        ctx.lineWidth = 3;
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.arc(entity.x, entity.y, radius + 5, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+
     ctx.globalAlpha = alpha;
     ctx.fillStyle = fillStyle;
     ctx.beginPath();
@@ -41,6 +73,15 @@ const Entities = {
       entity.y + Math.sin(entity.angle) * radius
     );
     ctx.stroke();
+
+    // Generation indicator for divided entities
+    if (showGen && entity.generation >= 0) {
+      ctx.fillStyle = "#fff";
+      ctx.font = "12px Arial";
+      ctx.textAlign = "center";
+      ctx.fillText(`G${entity.generation}`, entity.x, entity.y + radius + 15);
+    }
+
     ctx.restore();
   },
 

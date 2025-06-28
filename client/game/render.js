@@ -9,6 +9,8 @@ import { otherPlayers, playerCount, connectionStatus } from '../network/events.j
 import Entities from './entities.js';
 import Resources from './resources.js';
 
+const showEnergy = false;
+
 function drawGrid() {
   // Use server defaults as fallback if world dimensions not yet received
   const worldWidth = WORLD_WIDTH || 1000;
@@ -40,7 +42,7 @@ function drawUI() {
   ctx.fillText(`Players: ${playerCount}`, 12, 36);
 
   // Energy display
-  if (Player.energy !== undefined) {
+  if (showEnergy && Player.energy !== undefined) {
     const energyPercent = Math.round((Player.energy / Player.maxEnergy) * 100);
     let energyColor = "#0f0"; // Green when healthy
     if (energyPercent <= ENERGY_BAR_LOW) energyColor = "#f00"; // Red when low
