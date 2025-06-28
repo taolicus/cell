@@ -1,5 +1,5 @@
 // Resource management for nutrient particles
-const { WORLD_WIDTH, WORLD_HEIGHT } = require("../config");
+const { WORLD_WIDTH, WORLD_HEIGHT, INITIAL_RESOURCE_COUNT } = require("../config");
 const { distance } = require("../utils/math");
 
 const Resources = {
@@ -15,7 +15,7 @@ const Resources = {
     };
   },
 
-  createInitialResources(count = 50) {
+  createInitialResources(count = INITIAL_RESOURCE_COUNT) {
     const resources = [];
     for (let i = 0; i < count; i++) {
       resources.push(this.createResource());
@@ -89,7 +89,7 @@ const Resources = {
     }
     // Maintain minimum resource count
     const activeResources = resources.filter(r => r.isActive).length;
-    const minResources = 30;
+    const minResources = INITIAL_RESOURCE_COUNT;
     if (activeResources < minResources) {
       const needed = minResources - activeResources;
       for (let i = 0; i < needed; i++) {
