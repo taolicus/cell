@@ -43,7 +43,7 @@ const Entities = {
     };
   },
 
-  updateEntities(entities, players) {
+  updateEntities(entities, players, spatialManager) {
     // Gather all possible targets (players and entities)
     const playerList = Object.entries(players).map(([id, p]) => ({
       ...p,
@@ -131,31 +131,20 @@ const Entities = {
       if (entity.followCooldown <= 0) {
         // 20% chance to start/stop following every 2-4 seconds
         if (Math.random() < 0.2) {
-          // Find nearest target (player or other entity, not self)
-          let nearest = null;
-          let nearestDist = Infinity;
-          // Check players
-          for (const p of playerList) {
-            const dist = distance(entity.x, entity.y, p.x, p.y);
-            if (dist < 400 && dist < nearestDist) {
-              // only follow if within 400 units
-              nearest = p.id;
-              nearestDist = dist;
+          // Use spatial manager to find nearest target efficiently
+          const { target, distance: nearestDist } = spatialManager.findNearestTarget(entity, 400, entities, players);
+
+          if (target) {
+            // Determine target ID based on whether it's a player or entity
+            if (target.id && target.id.startsWith('player:')) {
+              entity.followTargetId = target.id;
+            } else {
+              // Find entity index
+              const entityIndex = entities.indexOf(target);
+              if (entityIndex !== -1) {
+                entity.followTargetId = entityIndex;
+              }
             }
-          }
-          // Check other entities
-          for (let j = 0; j < entities.length; j++) {
-            if (j === i) continue;
-            const e2 = entities[j];
-            if (!e2.isAlive) continue; // Skip dead entities
-            const dist = distance(entity.x, entity.y, e2.x, e2.y);
-            if (dist < 400 && dist < nearestDist) {
-              nearest = j;
-              nearestDist = dist;
-            }
-          }
-          if (nearest !== null) {
-            entity.followTargetId = nearest;
           } else {
             entity.followTargetId = null;
           }

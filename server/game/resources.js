@@ -23,7 +23,7 @@ const Resources = {
     return resources;
   },
 
-  updateResources(resources, entities, players) {
+  updateResources(resources, entities, players, spatialManager) {
     // Check for resource consumption by entities
     for (let i = resources.length - 1; i >= 0; i--) {
       const resource = resources[i];
@@ -36,8 +36,12 @@ const Resources = {
         }
         continue;
       }
+
+      // Use spatial manager to find nearby entities efficiently
+      const nearbyEntities = spatialManager.findObjectsInRadius(resource.x, resource.y, resource.radius + 50, entities, players);
+
       // Check if any entity is consuming this resource
-      for (const entity of entities) {
+      for (const { object: entity } of nearbyEntities) {
         if (!entity.isAlive) continue;
 
         // Validate coordinates before distance calculation
@@ -61,9 +65,11 @@ const Resources = {
           break; // Only one entity can consume a resource
         }
       }
-      // Check if player is consuming this resource
-      for (const playerId in players) {
-        const player = players[playerId];
+
+      // Check if player is consuming this resource (players are also in nearbyEntities)
+      for (const { object: player } of nearbyEntities) {
+        // Skip if this is an entity, not a player
+        if (player.id && !player.id.startsWith('player:')) continue;
         if (!player.isAlive) continue;
 
         // Validate coordinates before distance calculation
